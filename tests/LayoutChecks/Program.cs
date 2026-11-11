@@ -70,14 +70,14 @@ Check(!GridRules.HighlightCategory(true,"Food",null),"All-categories button must
 Check(GridRules.MatchesSearch(true,"Rope","RO"),"Search remains case-insensitive");
 Check(!GridRules.MatchesSearch(false,"Rope","Rope"),"Search must not reveal unknown identity");
 Check(GridRules.MatchesSearch(false,"",""),"Unknown slots remain visible without a search query");
-foreach (float viewport in new[] { 100f,200f,395f,396f,473f,474f,500f,600f,900f })
+foreach (float viewport in new[] { 100f,200f,395f,396f,451f,452f,500f,600f,900f })
 {
     int columns = GridRules.ColumnCount(viewport,spec.ReferenceColumns);
     float side = GridRules.CellSide(viewport,columns);
     Check(columns >= 1 && columns <= spec.ReferenceColumns && side >= 37,"Column wrapping keeps cells readable");
-    Check(Math.Abs(8+columns*side+(columns-1)*2-viewport) < .001f,"Grid must fill its usable width without overflowing or a height cap");
+    Check(Math.Abs(8+columns*side-viewport) < .001f,"Touching tiles must fill the usable width without gaps or a height cap");
 }
-Check(GridRules.ColumnCount(473,12) == 11 && GridRules.ColumnCount(474,12) == 12,"Columns wrap at the minimum readable cell width");
+Check(GridRules.ColumnCount(451,12) == 11 && GridRules.ColumnCount(452,12) == 12,"Columns wrap at the minimum readable cell width");
 Check(GridRules.CellSide(900,12) > 56,"A wide viewport must not retain the old 56-unit cap");
 Check(GridRules.ScrollbarInsets(600,580,600) == (0f,22f),"Overlapping right scrollbar needs its width plus clearance");
 Check(GridRules.ScrollbarInsets(580,580,600) == (0f,0f),"Already-excluded scrollbar must not consume width twice");

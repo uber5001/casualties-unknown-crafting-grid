@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    [BepInPlugin(Id, "Crafting Grid", "0.3.3")]
+    [BepInPlugin(Id, "Crafting Grid", "0.3.4")]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string Id = "uber5001.casualtiesunknown.craftinggrid";
@@ -28,7 +28,7 @@ namespace CasualtiesUnknown.CraftingGrid
             active.SettingChanged += (_, __) => { if (!active.Value) RemoveView(); };
             useGrid.SettingChanged += (_, __) => { if (view && view.Camera) view.Camera.RefreshRecipeList(); };
             InstallPatches();
-            Logger.LogInfo("Crafting Grid 0.3.3 ready; catalog is read from the live retail registry when crafting opens.");
+            Logger.LogInfo("Crafting Grid 0.3.4 ready; catalog is read from the live retail registry when crafting opens.");
         }
         internal bool UseGrid => useGrid.Value;
         internal void SetGridMode(bool value) { useGrid.Value = value; }

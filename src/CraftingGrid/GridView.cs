@@ -296,13 +296,13 @@ namespace CasualtiesUnknown.CraftingGrid
             {
                 var rect = Rect("Recipe-"+entry.Layout.Key,content); TopLeft(rect); rect.sizeDelta = new Vector2(cellSide,cellSide);
                 var cell = layout.Cells[entry.Layout.Key];
-                rect.anchoredPosition = new Vector2(4+cell.X*(cellSide+2),-28-cell.Y*(cellSide+2));
+                rect.anchoredPosition = new Vector2(4+cell.X*cellSide,-28-cell.Y*cellSide);
                 var tile = new Tile { Entry = entry,Rect = rect,Background = rect.gameObject.AddComponent<Image>(),Visibility = rect.gameObject.AddComponent<CanvasGroup>() };
                 var iconRect = Rect("Icon",rect); iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(.5f,.5f);
                 iconRect.anchoredPosition = Vector2.zero; iconRect.sizeDelta = entry.Sprite ? IconSize(entry.Sprite) : Vector2.zero;
                 tile.Icon = iconRect.gameObject.AddComponent<Image>(); tile.Icon.preserveAspect = true; tile.Icon.raycastTarget = false;
                 tile.Unknown = Text("Unknown",rect,20); Stretch(tile.Unknown.rectTransform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
-                tile.Unknown.text = "\u00d7"; tile.Unknown.color = new Color32(120,130,114,255);
+                tile.Unknown.text = "\u00d7"; tile.Unknown.color = new Color32(32,35,30,255);
                 tile.Level = CornerText("NativeINT",rect,true); tile.Level.font = nativeIntStyle.font;
                 tile.Level.fontSharedMaterial = nativeIntStyle.fontSharedMaterial; tile.Level.fontStyle = nativeIntStyle.fontStyle;
                 tile.Level.fontSize = Mathf.Min(nativeIntStyle.fontSize,cellSide*.38f);
@@ -316,7 +316,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 events.QuickCraft = () => Guard(() => Craft(tile));
                 tiles.Add(tile);
             }
-            content.sizeDelta = new Vector2(Math.Max(width,8+layout.Columns*(cellSide+2)-2),32+layout.Rows*(cellSide+2));
+            content.sizeDelta = new Vector2(Math.Max(width,8+layout.Columns*cellSide),32+layout.Rows*cellSide);
             if (gridMode == true) scroll.horizontal = content.rect.width > viewport.rect.width+1;
             gridScroll = new Vector2(0,1);
             if (gridMode == true) scroll.normalizedPosition = gridScroll;
