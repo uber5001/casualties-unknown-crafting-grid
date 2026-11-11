@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -7,7 +8,7 @@ using UnityEngine;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    [BepInPlugin(Id, "Crafting Grid", "0.1.0")]
+    [BepInPlugin(Id, "Crafting Grid", "0.1.1")]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string Id = "uber5001.casualtiesunknown.craftinggrid";
@@ -16,6 +17,7 @@ namespace CasualtiesUnknown.CraftingGrid
         ConfigEntry<bool> active;
         Harmony harmony;
         bool failed;
+        bool refreshObserved;
         GridView view;
         void Awake()
         {
@@ -23,12 +25,22 @@ namespace CasualtiesUnknown.CraftingGrid
             active = Config.Bind("General", "Enabled", true, "Replace the crafting presentation. False restores vanilla crafting.");
             active.SettingChanged += (_, __) => { if (!active.Value) RemoveView(); };
             InstallPatches();
-            Logger.LogInfo("Crafting Grid 0.1.0 ready; catalog is read from the live retail registry when crafting opens.");
+            Logger.LogInfo("Crafting Grid 0.1.1 ready; catalog is read from the live retail registry when crafting opens.");
         }
-        void OnEnable() { if (Instance == this) InstallPatches(); }
-        void OnDisable() { RemoveView(); harmony?.UnpatchSelf(); harmony = null; }
-        void OnDestroy() { if (Instance == this) { RemoveView(); harmony?.UnpatchSelf(); Instance = null; } }
-        void InstallPatches() { if (harmony == null) { harmony = new Harmony(Id); harmony.PatchAll(typeof(Plugin).Assembly); } }
+        void OnEnable() { if (Instance == this) { Logger.LogInfo("Crafting Grid enabled."); InstallPatches(); } }
+        void OnDisable() { Logger.LogInfo("Crafting Grid disabled; removing its patches and presentation."); RemoveView(); harmony?.UnpatchSelf(); harmony = null; }
+        void OnDestroy() { if (Instance == this) { Logger.LogInfo("Crafting Grid component destroyed."); RemoveView(); harmony?.UnpatchSelf(); Instance = null; } }
+        void InstallPatches()
+        {
+            if (harmony != null) return;
+            harmony = new Harmony(Id);
+            harmony.PatchAll(typeof(Plugin).Assembly);
+            var target = AccessTools.Method(typeof(PlayerCamera), nameof(PlayerCamera.RefreshRecipeList), Type.EmptyTypes);
+            var info = target == null ? null : Harmony.GetPatchInfo(target);
+            if (info == null || !info.Postfixes.Any(p => p.owner == Id))
+                throw new InvalidOperationException("Crafting Grid failed to register its RefreshRecipeList postfix. Vanilla crafting remains available.");
+            Logger.LogInfo("Verified Harmony postfix on "+target.DeclaringType.FullName+"."+target.Name+" from "+target.Module.Assembly.Location);
+        }
         void RemoveView() { if (view) { view.RestoreVanilla(); Destroy(view.gameObject); view = null; } }
         internal void Fail(Exception ex)
         {
@@ -37,6 +49,11 @@ namespace CasualtiesUnknown.CraftingGrid
         }
         bool Refresh(PlayerCamera camera)
         {
+            if (!refreshObserved)
+            {
+                refreshObserved = true;
+                Logger.LogInfo($"Native recipe refresh reached grid hook: componentActive={isActiveAndEnabled}, setting={active.Value}, panelActive={camera.craftingPanel.activeSelf}, registryCount={Recipes.recipes?.Count ?? -1}.");
+            }
             if (!isActiveAndEnabled || failed || !active.Value || !camera.craftingPanel.activeSelf || Recipes.recipes == null || Recipes.recipes.Count == 0) return false;
             try
             {
@@ -55,6 +72,7 @@ namespace CasualtiesUnknown.CraftingGrid
         [HarmonyPatch(typeof(PlayerCamera), nameof(PlayerCamera.RefreshRecipeList))]
         static class RefreshPatch
         {
+            [HarmonyPostfix]
             static void Postfix(PlayerCamera __instance) { if (Instance) Instance.Refresh(__instance); }
         }
     }

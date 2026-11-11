@@ -32,6 +32,28 @@ if (-not (Test-Path -LiteralPath $loaderAssembly)) {
     }
 }
 if (([Reflection.AssemblyName]::GetAssemblyName($loaderAssembly)).Version.Major -ne 5) { throw 'The installed loader is not BepInEx 5.' }
+$configRoot = Join-Path $loaderRoot 'config'
+New-Item -ItemType Directory -Path $configRoot -Force | Out-Null
+$coreConfig = Join-Path $configRoot 'BepInEx.cfg'
+$configText = if (Test-Path -LiteralPath $coreConfig) { [IO.File]::ReadAllText($coreConfig) } else { '' }
+# The retail startup destroys the default manager before the crafting hook can run.
+# Use BepInEx's documented persistence setting; preserve other sections and settings.
+$sectionRegex = [regex]::new('(?ms)^\[Chainloader\][^\r\n]*\r?\n(?<body>.*?)(?=^\[|\z)')
+$section = $sectionRegex.Match($configText)
+if ($section.Success) {
+    $updatedSection = $section.Value
+    if ($updatedSection -match '(?m)^\s*HideManagerGameObject\s*=') {
+        $updatedSection = [regex]::Replace($updatedSection, '(?m)^\s*HideManagerGameObject\s*=[^\r\n]*', 'HideManagerGameObject = true')
+    } else {
+        $updatedSection = $updatedSection.TrimEnd()+"`r`nHideManagerGameObject = true`r`n`r`n"
+    }
+    $configText = $configText.Substring(0,$section.Index)+$updatedSection+$configText.Substring($section.Index+$section.Length)
+} else {
+    $configText = $configText.TrimEnd()+"`r`n`r`n[Chainloader]`r`nHideManagerGameObject = true`r`n"
+}
+if (Test-Path -LiteralPath $coreConfig) { Copy-Item -LiteralPath $coreConfig -Destination ($coreConfig+'.previous') -Force }
+[IO.File]::WriteAllText($coreConfig,$configText,[Text.UTF8Encoding]::new($false))
+Write-Output 'Configured BepInEx manager persistence (HideManagerGameObject = true).'
 $destinationRoot = Join-Path $loaderRoot 'plugins\CraftingGrid'
 New-Item -ItemType Directory -Path $destinationRoot -Force | Out-Null
 $destinationFile = Join-Path $destinationRoot 'CasualtiesUnknown.CraftingGrid.dll'

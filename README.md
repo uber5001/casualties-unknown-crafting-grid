@@ -2,7 +2,7 @@
 
 Native crafting presentation mod requested by uber5001. The complete specification and interactive visual fixture are preserved in [handoff/PROMPT.md](handoff/PROMPT.md) and [handoff/crafting-reference.html](handoff/crafting-reference.html).
 
-**Status:** quick prototype, version 0.1.0. Reads the live retail recipe registry, uses native icons and matching, and delegates each craft to `PlayerCamera.TryCraft()`. Additional recipes, levels, categories, and alternate recipes are derived dynamically. Inventory, translation, and hovering do not determine tile positions.
+**Status:** quick prototype, version 0.1.1. Reads the live retail recipe registry, uses native icons and matching, and delegates each craft to `PlayerCamera.TryCraft()`. Additional recipes, levels, categories, and alternate recipes are derived dynamically. Inventory, translation, and hovering do not determine tile positions.
 
 Open `handoff/crafting-reference.html` in a desktop browser to exercise the sample. Its catalog, stock, art, font, and crafting model are test fixtures only; none are embedded in the plugin. The user waived the initial hands-on reference requirement in favor of using its source and trying a quick native prototype.
 
@@ -20,7 +20,7 @@ Run geometry checks with `dotnet run --project tests/LayoutChecks/LayoutChecks.c
 
 ## Install and try
 
-With the game closed, copy the DLL into `BepInEx/plugins/CraftingGrid/` in a BepInEx 5 x64 Mono retail installation. Alternatively, the local-only installer can reuse a compatible loader already installed in another local game:
+With the game closed, copy the DLL into `BepInEx/plugins/CraftingGrid/` in a BepInEx 5 x64 Mono retail installation. In `BepInEx/config/BepInEx.cfg`, set `[Chainloader] HideManagerGameObject = true`: the default manager is destroyed during retail startup, removing the plugin before C can reach it. This is the setting recommended by [BepInEx troubleshooting](https://docs.bepinex.dev/articles/user_guide/troubleshooting.html). The installer sets it automatically while preserving other settings and a backup. It can also reuse a compatible loader already installed in another local game:
 
 ```powershell
 ./scripts/Install.ps1 -GamePath 'C:\path\to\Casualties Unknown' -LoaderSource 'C:\path\to\existing\BepInEx-game'

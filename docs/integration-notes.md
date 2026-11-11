@@ -68,3 +68,11 @@ The native visible rule permits risky recipes up to three INT above the player a
 - No real-game menu, rendering, craft, failure, inventory, or controller checks have been run. The user requested doing the in-game test themselves.
 
 Shortest check: start the retail game through Steam, load a run, press C, hover one known recipe, click it once, and check the inventory change. Then try a blocked tile and close/reopen. For a loading/UI failure, inspect `BepInEx/LogOutput.log` for `Crafting Grid` and `Crafting grid attached`; the attachment line records the actual live catalog size and game/Unity versions.
+
+## 0.1.1 startup persistence correction
+
+The first user test opened the vanilla crafting screen. BepInEx loaded 0.1.0 without errors, but no grid attachment was logged. A diagnostic 0.1.1 build verified that the Harmony postfix was registered on the correct retail assembly, then logged `OnDisable` and `OnDestroy` immediately after startup. This removed the hook before the user could reach crafting.
+
+The supported correction is `[Chainloader] HideManagerGameObject = true` in `BepInEx/config/BepInEx.cfg`, as documented in [BepInEx troubleshooting](https://docs.bepinex.dev/articles/user_guide/troubleshooting.html). The installer now sets this for the retail game, preserves the rest of the config, and saves `BepInEx.cfg.previous`. The applied config was compared with its backup: only this setting changed.
+
+0.1.1 also verifies patch ownership during startup and records the first native refresh's activation state and live registry size. It retains the existing Harmony/menu integration rather than introducing a second activation path. The release build passed with zero warnings/errors. After applying the documented loader setting and restarting, the plugin remained enabled through main-menu startup. A real in-game C press then reached the hook and logged successful grid attachment: 137 registry entries, 136 displayed entries (one genuinely secret entry concealed), 17 columns, one strip, retail game 1.0, Unity 2022.3.62f3. Visual appearance and actual crafting still require the user's check.
