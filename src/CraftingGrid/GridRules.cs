@@ -11,6 +11,8 @@ namespace CasualtiesUnknown.CraftingGrid
                 ? (0,Math.Min(length,Math.Max(0,length-barStart+2)))
                 : (Math.Min(length,Math.Max(0,barEnd+2)),0);
         }
+        // Same 4-unit margins, 2-unit gaps, and 37-unit minimum as CellSide.
+        public static int ColumnCount(float viewportWidth, int referenceColumns) => Math.Max(1,Math.Min(referenceColumns,(int)Math.Floor((viewportWidth-6)/39)));
         public static float CellSide(float viewportWidth, int columns)
         {
             if (columns < 1) throw new ArgumentOutOfRangeException(nameof(columns));

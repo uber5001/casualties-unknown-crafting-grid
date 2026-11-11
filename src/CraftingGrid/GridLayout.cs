@@ -4,119 +4,87 @@ using System.Linq;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    // Pure geometry: eligibility, discovery, localization and hover never enter the layout.
     public sealed class LayoutEntry
     {
-        public int Key, Level;
-        public string Category, SortName, StableId;
+        public int Key;
+        public string Category, OutputName, StableId;
+        public bool Repair;
+        public string[] Ingredients = Array.Empty<string>();
     }
-    public sealed class Band
+    public sealed class RecipeLayoutSpec
     {
-        public int Low, High, Width, Height;
-        public readonly List<LayoutEntry> Entries = new List<LayoutEntry>();
+        public int ReferenceColumns { get; set; }
+        public List<List<RecipeGroup>> Bands { get; set; }
+    }
+    public sealed class RecipeGroup
+    {
+        public string Group { get; set; }
+        public int Columns { get; set; }
+        public List<RecipeSelector> Recipes { get; set; }
+    }
+    public sealed class RecipeSelector
+    {
+        public string ReferenceId { get; set; }
+        public string Label { get; set; }
+        public string Output { get; set; }
+        public bool Repair { get; set; }
+        public string VariantIngredient { get; set; }
     }
     public struct Cell : IEquatable<Cell>
     {
-        public int Strip, X, Y;
-        public Cell(int strip, int x, int y) { Strip = strip; X = x; Y = y; }
-        public bool Equals(Cell c) => Strip == c.Strip && X == c.X && Y == c.Y;
+        public int X, Y;
+        public Cell(int x, int y) { X = x; Y = y; }
+        public bool Equals(Cell c) => X == c.X && Y == c.Y;
         public override bool Equals(object obj) => obj is Cell c && Equals(c);
-        public override int GetHashCode() => (Strip * 397 ^ X) * 397 ^ Y;
-    }
-    public sealed class Strip
-    {
-        public int Width, Height;
-        public readonly HashSet<Cell> Occupied = new HashSet<Cell>();
+        public override int GetHashCode() => X * 397 ^ Y;
     }
     public sealed class BoardLayout
     {
-        public readonly List<Band> Bands = new List<Band>();
-        public readonly List<Strip> Strips = new List<Strip>();
         public readonly Dictionary<int, Cell> Cells = new Dictionary<int, Cell>();
-        public int Columns;
+        public int Columns, Rows, MappedCount;
     }
     public static class GridLayout
     {
-        public static BoardLayout CreateVertical(IEnumerable<LayoutEntry> entries)
+        // Selectors use canonical English output names, never localized UI labels or registry indices.
+        static string Normalize(string name) => new string((name ?? "").Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+        static bool Matches(LayoutEntry entry, RecipeSelector selector) =>
+            Normalize(entry.OutputName) == Normalize(selector.Output ?? selector.Label) && entry.Repair == selector.Repair &&
+            (string.IsNullOrEmpty(selector.VariantIngredient) || entry.Ingredients.Any(i => Normalize(i) == Normalize(selector.VariantIngredient)));
+
+        public static BoardLayout Create(IEnumerable<LayoutEntry> entries, RecipeLayoutSpec spec, int maxColumns = int.MaxValue)
         {
-            // Transpose the same canonical catalog layout: levels now progress downward.
-            var original = Create(entries);
-            var board = new BoardLayout();
-            if (original.Strips.Count == 0) return board;
-            board.Bands.AddRange(original.Bands);
-            board.Columns = original.Strips[0].Height;
-            var strip = new Strip { Width = board.Columns, Height = original.Columns };
-            board.Strips.Add(strip);
-            foreach (var pair in original.Cells)
+            if (spec == null || spec.ReferenceColumns < 1 || spec.Bands == null || spec.Bands.Any(b => b == null || b.Any(g =>
+                g == null || g.Columns < 1 || g.Recipes == null || g.Recipes.Any(r => r == null || string.IsNullOrWhiteSpace(r.Output ?? r.Label)))))
+                throw new ArgumentException("recipe-layout.json must define a reference width, positive group widths, and recipe selectors.", nameof(spec));
+            if (maxColumns < 1) throw new ArgumentOutOfRangeException(nameof(maxColumns));
+            var board = new BoardLayout { Columns = Math.Min(spec.ReferenceColumns,maxColumns) };
+            var remaining = entries.OrderBy(e => e.OutputName,StringComparer.Ordinal).ThenBy(e => e.Repair)
+                .ThenBy(e => e.StableId,StringComparer.Ordinal).ThenBy(e => e.Key).ToList();
+            int y = 0;
+            foreach (var band in spec.Bands)
             {
-                var cell = new Cell(0,pair.Value.Y,pair.Value.X);
-                board.Cells.Add(pair.Key,cell); strip.Occupied.Add(cell);
-            }
-            return board;
-        }
-        static readonly string[] Categories = { "Food", "Materials", "Medicine", "Tools", "Utilities" };
-        static string[] OrderedCategories(IEnumerable<LayoutEntry> entries) => entries.Select(e => e.Category).Distinct()
-            .OrderBy(c => { int i = Array.IndexOf(Categories, c); return i < 0 ? int.MaxValue : i; })
-            .ThenBy(c => c, StringComparer.Ordinal).ToArray();
-        static int Height(IEnumerable<LayoutEntry> entries, int width) => entries.GroupBy(e => e.Category).Sum(g => (g.Count() + width - 1) / width);
-        static void Finish(BoardLayout board, List<LayoutEntry> entries)
-        {
-            if (entries.Count == 0) return;
-            int target = Math.Max(10, entries.Select(e => e.Category).Distinct().Count()), width = 1;
-            while (Height(entries, width) > target) width++;
-            var band = new Band { Low = entries.Min(e => e.Level), High = entries.Max(e => e.Level), Width = width, Height = Height(entries, width) };
-            foreach (string category in OrderedCategories(entries))
-                band.Entries.AddRange(entries.Where(e => e.Category == category).OrderBy(e => e.Level)
-                    .ThenBy(e => e.SortName, StringComparer.Create(System.Globalization.CultureInfo.GetCultureInfo("en"), false))
-                    .ThenBy(e => e.StableId, StringComparer.Ordinal).ThenBy(e => e.Key));
-            board.Bands.Add(band);
-            entries.Clear();
-        }
-        public static BoardLayout Create(IEnumerable<LayoutEntry> entries, int maxColumns = int.MaxValue)
-        {
-            var board = new BoardLayout();
-            var pending = new List<LayoutEntry>();
-            int previous = int.MinValue;
-            foreach (var level in entries.GroupBy(e => e.Level).OrderBy(g => g.Key))
-            {
-                var group = level.ToList();
-                if (previous != int.MinValue && level.Key != previous + 1) Finish(board, pending);
-                if (group.Count >= 7) { Finish(board, pending); Finish(board, group); }
-                else
+                int x = 0, rowHeight = 0;
+                foreach (var group in band)
                 {
-                    if (pending.Count > 0 && Height(pending.Concat(group), 2) > Math.Max(10, pending.Concat(group).Select(e => e.Category).Distinct().Count()))
-                        Finish(board, pending);
-                    pending.AddRange(group);
-                }
-                previous = level.Key;
-            }
-            Finish(board, pending);
-            if (board.Bands.Count == 0) return board;
-            board.Columns = Math.Min(board.Bands.Sum(b => b.Width), Math.Max(board.Bands.Max(b => b.Width), maxColumns));
-            int offset = 0, stripIndex = -1;
-            Strip strip = null;
-            foreach (var band in board.Bands)
-            {
-                if (strip == null || offset + band.Width > board.Columns)
-                {
-                    strip = new Strip { Width = board.Columns };
-                    board.Strips.Add(strip); stripIndex++; offset = 0;
-                }
-                int row = 0;
-                foreach (var category in band.Entries.GroupBy(e => e.Category))
-                {
-                    int n = 0;
-                    foreach (var entry in category)
+                    int width = Math.Min(group.Columns,board.Columns);
+                    if (x + width > board.Columns) { y += rowHeight; x = 0; rowHeight = 0; }
+                    for (int i = 0; i < group.Recipes.Count; i++)
                     {
-                        var cell = new Cell(stripIndex, offset + n % band.Width, row + n / band.Width);
-                        board.Cells.Add(entry.Key, cell); strip.Occupied.Add(cell); n++;
+                        var entry = remaining.FirstOrDefault(e => Matches(e,group.Recipes[i]));
+                        // Absent/secret recipes leave their authored position empty; discoveries don't shift neighbors.
+                        if (entry == null) continue;
+                        board.Cells.Add(entry.Key,new Cell(x+i%width,y+i/width));
+                        remaining.Remove(entry); board.MappedCount++;
                     }
-                    row += (n + band.Width - 1) / band.Width;
+                    rowHeight = Math.Max(rowHeight,(group.Recipes.Count+width-1)/width);
+                    x += width;
                 }
-                strip.Height = Math.Max(strip.Height, row); offset += band.Width;
+                y += rowHeight;
             }
+            // New or modded live recipes are never dropped or inserted into the hand-picked groups.
+            for (int i = 0; i < remaining.Count; i++) board.Cells.Add(remaining[i].Key,new Cell(i%board.Columns,y+i/board.Columns));
+            board.Rows = y+(remaining.Count+board.Columns-1)/board.Columns;
             return board;
         }
     }
-
 }

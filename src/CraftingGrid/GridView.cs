@@ -48,6 +48,7 @@ namespace CasualtiesUnknown.CraftingGrid
         NativeCatalog catalog;
         BoardLayout layout;
         RectTransform viewport, stockViewport, content, stockContent, searchRect, clearRect;
+        Transform nativeCraftTarget;
         ScrollRect scroll;
         CanvasGroup stockGroup;
         GridBoundary boundary;
@@ -85,6 +86,9 @@ namespace CasualtiesUnknown.CraftingGrid
             nativeIntStyle = recipeBox.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
             if (!template || !template.font || !nativeIntStyle) throw new InvalidOperationException("Native recipe label or INT style is missing.");
             font = template.font; fontMaterial = template.fontSharedMaterial;
+            var preview = camera.craftingPanel.transform.GetChild(6);
+            var previewButton = preview.GetComponentInParent<Button>();
+            nativeCraftTarget = previewButton && previewButton.transform.IsChildOf(camera.craftingPanel.transform) ? previewButton.transform : preview;
             var nativeRequirements = camera.craftingPanel.transform.GetChild(8).GetComponent<TextMeshProUGUI>();
             fontSprites = nativeRequirements.spriteAsset ? nativeRequirements.spriteAsset : template.spriteAsset ? template.spriteAsset : TMP_Settings.defaultSpriteAsset;
             scroll = camera.recipeScrollRect;
@@ -266,7 +270,7 @@ namespace CasualtiesUnknown.CraftingGrid
         void RebuildCatalog()
         {
             catalog?.Dispose(); catalog = new NativeCatalog(); RebuildLayout();
-            Plugin.Log.LogInfo($"Inline grid catalog: {catalog.Entries.Count} recipes, {layout.Columns} columns x {layout.Strips[0].Height} rows.");
+            Plugin.Log.LogInfo($"Inline grid catalog: {catalog.Entries.Count} recipes, {layout.Columns} columns x {layout.Rows} rows; {layout.MappedCount} hand-picked, {catalog.Entries.Count-layout.MappedCount} appended.");
         }
         Vector2 IconSize(Sprite sprite)
         {
@@ -286,8 +290,7 @@ namespace CasualtiesUnknown.CraftingGrid
             foreach (var tile in tiles) { tile.Rect.gameObject.SetActive(false); Destroy(tile.Rect.gameObject); }
             tiles.Clear();
             width = viewport.rect.width;
-            layout = GridLayout.CreateVertical(catalog.Entries.Select(e => e.Layout));
-            if (layout.Columns == 0) throw new InvalidOperationException("The native recipe registry contains no displayable recipes.");
+            layout = GridLayout.Create(catalog.Entries.Select(e => e.Layout),LayoutResource.Spec,GridRules.ColumnCount(width,LayoutResource.Spec.ReferenceColumns));
             cellSide = GridRules.CellSide(width,layout.Columns);
             foreach (var entry in catalog.Entries)
             {
@@ -313,7 +316,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 events.QuickCraft = () => Guard(() => Craft(tile));
                 tiles.Add(tile);
             }
-            content.sizeDelta = new Vector2(Math.Max(width,8+layout.Columns*(cellSide+2)-2),32+layout.Strips[0].Height*(cellSide+2));
+            content.sizeDelta = new Vector2(Math.Max(width,8+layout.Columns*(cellSide+2)-2),32+layout.Rows*(cellSide+2));
             if (gridMode == true) scroll.horizontal = content.rect.width > viewport.rect.width+1;
             gridScroll = new Vector2(0,1);
             if (gridMode == true) scroll.normalizedPosition = gridScroll;
@@ -392,16 +395,22 @@ namespace CasualtiesUnknown.CraftingGrid
         }
         public bool ShouldKeepOpenForQuickCraft(PlayerCamera camera)
         {
-            if (camera != Camera || gridMode != true || !isActiveAndEnabled || !camera.craftingPanel.activeSelf || KeyBinds.GetBind("iteminteract") != KeyCode.Mouse1 || !Input.GetMouseButtonDown(1)) return false;
-            // Right-click is vanilla's close binding. Override it only on our tiles, while preserving explicit close/back keys.
-            if (Input.GetKeyDown(KeyBinds.GetBind("craft")) || Input.GetKeyDown(KeyBinds.GetBind("pause")) || Input.GetKeyDown(KeyBinds.GetBind("woundview"))) return false;
-            return UIUtil.GetEventSystemRaycastResults().Any(hit => hit.gameObject.TryGetComponent<TileEvents>(out var events) && events.Owner == this);
+            if (camera != Camera || !isActiveAndEnabled || !camera.craftingPanel.activeSelf || KeyBinds.GetBind("iteminteract") != KeyCode.Mouse1 || !Input.GetMouseButtonDown(1) || ExplicitClosePressed()) return false;
+            // Right-click crafts on grid tiles and the native preview; explicit close/back keys still win.
+            var hits = UIUtil.GetEventSystemRaycastResults();
+            return lastCraftFrame == Time.frameCount || OnNativeCraftTarget(hits.FirstOrDefault().gameObject) ||
+                gridMode == true && hits.Any(hit => hit.gameObject.TryGetComponent<TileEvents>(out var events) && events.Owner == this);
         }
+        static bool ExplicitClosePressed() => Input.GetKeyDown(KeyBinds.GetBind("craft")) || Input.GetKeyDown(KeyBinds.GetBind("pause")) || Input.GetKeyDown(KeyBinds.GetBind("woundview"));
+        bool OnNativeCraftTarget(GameObject hit) => hit && nativeCraftTarget && (hit.transform == nativeCraftTarget || hit.transform.IsChildOf(nativeCraftTarget));
         void Craft(Tile tile)
         {
-            if (gridMode != true || !tile.Visible || lastCraftFrame == Time.frameCount || !Camera.craftingPanel.activeSelf) return;
+            if (gridMode == true && tile.Visible) Craft(tile.Entry.Recipe);
+        }
+        void Craft(Recipe recipe)
+        {
+            if (recipe == null || lastCraftFrame == Time.frameCount || !Camera.craftingPanel.activeSelf) return;
             lastCraftFrame = Time.frameCount;
-            var recipe = tile.Entry.Recipe;
             int registryIndex = Recipes.recipes.IndexOf(recipe);
             if (registryIndex < 0 || !NativeCatalog.Ready(recipe)) { Camera.PlayUISound(PlayerCamera.UISoundType.Deny); RefreshState(); return; }
             Camera.selectedRecipe = registryIndex;
@@ -418,7 +427,11 @@ namespace CasualtiesUnknown.CraftingGrid
         }
         void Update()
         {
-            if (!Camera || restored || gridMode != true || catalog == null || Time.unscaledTime < nextPoll) return;
+            if (!Camera || restored || !Camera.craftingPanel.activeSelf) return;
+            // Poll the shortcut without adding a pointer handler that could intercept the native Button's left click.
+            if (Input.GetMouseButtonDown(1) && !ExplicitClosePressed() && OnNativeCraftTarget(UIUtil.GetEventSystemRaycastResults().FirstOrDefault().gameObject))
+                Guard(() => Craft(SelectedRecipe()));
+            if (gridMode != true || catalog == null || Time.unscaledTime < nextPoll) return;
             nextPoll = Time.unscaledTime+.4f;
             Guard(() => {
                 UpdateGridViewport();

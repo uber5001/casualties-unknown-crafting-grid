@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     <AssemblyName>CasualtiesUnknown.CraftingGrid</AssemblyName>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
     <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Casualties Unknown</GamePath>
     <ManagedPath>$(GamePath)\CasualtiesUnknown_Data\Managed</ManagedPath>
   </PropertyGroup>
@@ -14,6 +14,7 @@
     <Error Condition="!Exists('$(BepInExPath)\core\BepInEx.dll')" Text="Set BepInExPath to a local BepInEx 5 installation. No packages will be downloaded." />
   </Target>
   <ItemGroup>
+    <EmbeddedResource Include="../../recipe-layout.json" LogicalName="CasualtiesUnknown.CraftingGrid.recipe-layout.json" />
     <Reference Include="Assembly-CSharp"><HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BepInEx"><HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(BepInExPath)\core\0Harmony.dll</HintPath><Private>false</Private></Reference>

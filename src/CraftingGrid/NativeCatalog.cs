@@ -36,11 +36,9 @@ namespace CasualtiesUnknown.CraftingGrid
                 if (r?.result == null || r.items == null) continue;
                 // Respect native genuinely-secret item metadata; normal level-locked entries reserve a square.
                 if (!r.result.isLiquid && Item.GlobalItems.TryGetValue(r.result.id, out var info) && info.secret && !r.specialKnown && !r.hasMadeBefore) { concealed.Add(r); continue; }
-                string name = r.result.id;
-                var names = r.result.isLiquid ? english?.other : english?.main;
-                if (names != null && names.TryGetValue(r.result.id, out var canonical)) name = canonical;
                 var entry = new NativeEntry { Recipe = r, Layout = new LayoutEntry {
-                    Key = i, Level = r.INT, Category = r.category.ToString(), SortName = name + (r.isRepair ? " (repair)" : ""),
+                    Key = i, Category = r.category.ToString(), OutputName = CanonicalName(english,r.result.id,r.result.isLiquid), Repair = r.isRepair,
+                    Ingredients = r.items.Where(s => s.specific).Select(s => CanonicalName(english,s.specificId,s.isLiquid)).ToArray(),
                     StableId = Identity(r)
                 }};
                 try { (entry.Sprite, entry.Color) = r.resultSprite; }
@@ -50,6 +48,16 @@ namespace CasualtiesUnknown.CraftingGrid
 
             }
 
+        }
+        static string CanonicalName(Language english, string id, bool liquid)
+        {
+            if (liquid && Liquids.Registry.TryGetValue(id,out var type))
+            {
+                id = type.localeName ?? id;
+                liquid = !type.localeFromItem;
+            }
+            var names = liquid ? english?.other : english?.main;
+            return names != null && names.TryGetValue(id,out var name) ? name : id;
         }
         public bool IsCurrent => ReferenceEquals(registry, Recipes.recipes) && registryCount == Recipes.recipes.Count && structuralStamp == RegistryStamp(Recipes.recipes) && !concealed.Any(r => r.specialKnown || r.hasMadeBefore);
         static int RegistryStamp(List<Recipe> recipes)

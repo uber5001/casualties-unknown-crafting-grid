@@ -1,0 +1,246 @@
+{
+  "referenceColumns": 12,
+  "bands": [
+    [
+      {
+        "group": "Liquids",
+        "columns": 12,
+        "recipes": [
+          {"referenceId": "clean-water-1", "label": "Clean water"},
+          {"referenceId": "milk-1", "label": "Milk"},
+          {"referenceId": "produce-juice-1", "label": "Produce juice"},
+          {"referenceId": "refined-juice-1", "label": "Refined juice"},
+          {"referenceId": "soup-1", "label": "Soup"},
+          {"referenceId": "fat-1", "label": "Fat"},
+          {"referenceId": "bio-chem-fluid-1", "label": "Bio-chem fluid (glowplant)", "output": "Bio-chem fluid", "variantIngredient": "Glowplant fruit"},
+          {"referenceId": "bio-chem-fluid-2", "label": "Bio-chem fluid (lumalgae)", "output": "Bio-chem fluid", "variantIngredient": "Lumalgae"},
+          {"referenceId": "soap-1", "label": "Soap"},
+          {"referenceId": "antiseptic-1", "label": "Antiseptic"},
+          {"referenceId": "relief-cream-1", "label": "Relief cream"},
+          {"referenceId": "alien-blood-1", "label": "Alien blood"},
+          {"referenceId": "blood-1", "label": "Blood"},
+          {"referenceId": "saline-1", "label": "Saline"},
+          {"referenceId": "procoagulant-1", "label": "Procoagulant"},
+          {"referenceId": "antivenom-1", "label": "Antivenom"},
+          {"referenceId": "opium-1", "label": "Opium"},
+          {"referenceId": "morphine-1", "label": "Morphine"},
+          {"referenceId": "fentanyl-1", "label": "Fentanyl"},
+          {"referenceId": "painkillers-1", "label": "Painkillers"},
+          {"referenceId": "naltrexone-1", "label": "Naltrexone"},
+          {"referenceId": "antidepressants-1", "label": "Antidepressants"},
+          {"referenceId": "lrd-serum-1", "label": "L.R.D. Serum"}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "Bandages",
+        "columns": 5,
+        "recipes": [
+          {"referenceId": "ripped-dressing-1", "label": "Ripped dressing"},
+          {"referenceId": "sterilized-dressing-1", "label": "Sterilized dressing"},
+          {"referenceId": "dressing-1", "label": "Dressing"},
+          {"referenceId": "bruise-kit-1", "label": "Bruise kit"},
+          {"referenceId": "plastic-dressing-1", "label": "Plastic dressing"}
+        ]
+      },
+      {
+        "group": "Medical gear",
+        "columns": 7,
+        "recipes": [
+          {"referenceId": "syringe-1", "label": "Syringe"},
+          {"referenceId": "auto-injector-1", "label": "Auto-injector"},
+          {"referenceId": "iv-bag-1", "label": "IV bag"},
+          {"referenceId": "blood-bag-1", "label": "Blood bag"},
+          {"referenceId": "chest-drain-1", "label": "Chest drain"},
+          {"referenceId": "makeshift-lrd-1", "label": "Makeshift L.R.D."},
+          {"referenceId": "lrd-1", "label": "L.R.D."}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "First aid",
+        "columns": 8,
+        "recipes": [
+          {"referenceId": "tourniquet-1", "label": "Tourniquet"},
+          {"referenceId": "antiseptic-mush-1", "label": "Antiseptic mush"},
+          {"referenceId": "clotting-mush-1", "label": "Clotting mush"},
+          {"referenceId": "ice-pack-1", "label": "Ice pack"},
+          {"referenceId": "carcass-splint-1", "label": "Carcass splint"},
+          {"referenceId": "splint-1", "label": "Splint"},
+          {"referenceId": "tweezers-1", "label": "Tweezers"},
+          {"referenceId": "bone-welding-tool-1", "label": "Bone welding tool"}
+        ]
+      },
+      {
+        "group": "Prosthetics & implants",
+        "columns": 4,
+        "recipes": [
+          {"referenceId": "peg-limb-1", "label": "Peg limb"},
+          {"referenceId": "steel-prosthesis-1", "label": "Steel prosthesis"},
+          {"referenceId": "peo-limb-1", "label": "P.E.O. limb"},
+          {"referenceId": "neural-booster-1", "label": "Neural booster"}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "Food",
+        "columns": 4,
+        "recipes": [
+          {"referenceId": "rye-flour-1", "label": "Rye flour"},
+          {"referenceId": "bread-1", "label": "Bread"},
+          {"referenceId": "pancakes-1", "label": "Pancakes"},
+          {"referenceId": "bowl-of-cereal-1", "label": "Bowl of cereal"},
+          {"referenceId": "foliage-meal-1", "label": "Foliage meal"},
+          {"referenceId": "burger-1", "label": "Burger"},
+          {"referenceId": "pemmican-1", "label": "Pemmican"},
+          {"referenceId": "nutrient-bar-1", "label": "Nutrient bar"}
+        ]
+      },
+      {
+        "group": "Bags & bottles",
+        "columns": 4,
+        "recipes": [
+          {"referenceId": "foliage-bag-1", "label": "Foliage bag"},
+          {"referenceId": "sling-bag-1", "label": "Sling bag"},
+          {"referenceId": "duffel-bag-1", "label": "Duffel bag"},
+          {"referenceId": "backpack-1", "label": "Backpack"},
+          {"referenceId": "material-pouch-1", "label": "Material pouch"},
+          {"referenceId": "canteen-1", "label": "Canteen"},
+          {"referenceId": "spray-bottle-1", "label": "Spray bottle"}
+        ]
+      },
+      {
+        "group": "Lighting",
+        "columns": 4,
+        "recipes": [
+          {"referenceId": "torch-1", "label": "Torch"},
+          {"referenceId": "torch-2", "label": "Torch (repair)", "output": "Torch", "repair": true},
+          {"referenceId": "makeshift-headlamp-1", "label": "Makeshift headlamp"},
+          {"referenceId": "headlamp-1", "label": "Headlamp"},
+          {"referenceId": "flashlight-1", "label": "Flashlight"},
+          {"referenceId": "lantern-1", "label": "Lantern"},
+          {"referenceId": "lightbulb-1", "label": "Lightbulb"}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "Natural materials",
+        "columns": 5,
+        "recipes": [
+          {"referenceId": "stick-1", "label": "Stick"},
+          {"referenceId": "wood-scraps-1", "label": "Wood scraps"},
+          {"referenceId": "wood-cube-1", "label": "Wood cube"},
+          {"referenceId": "wood-panel-1", "label": "Wood panel"},
+          {"referenceId": "foliage-1", "label": "Foliage"},
+          {"referenceId": "rope-1", "label": "Rope"},
+          {"referenceId": "string-1", "label": "String"},
+          {"referenceId": "canvas-1", "label": "Canvas"},
+          {"referenceId": "large-carcass-1", "label": "Large carcass"}
+        ]
+      },
+      {
+        "group": "Metal & sheets",
+        "columns": 4,
+        "recipes": [
+          {"referenceId": "scrap-cube-1", "label": "Scrap cube"},
+          {"referenceId": "scrap-panel-1", "label": "Scrap panel"},
+          {"referenceId": "scrap-tube-1", "label": "Scrap tube"},
+          {"referenceId": "nails-1", "label": "Nails"},
+          {"referenceId": "flexiglass-1", "label": "Flexiglass"},
+          {"referenceId": "titanium-slab-1", "label": "Titanium slab"},
+          {"referenceId": "titanium-sheet-1", "label": "Titanium sheet"},
+          {"referenceId": "titanium-rod-1", "label": "Titanium rod"}
+        ]
+      },
+      {
+        "group": "Camp & climbing",
+        "columns": 3,
+        "recipes": [
+          {"referenceId": "campfire-1", "label": "Campfire"},
+          {"referenceId": "firestarter-1", "label": "Firestarter"},
+          {"referenceId": "charcoal-1", "label": "Charcoal"},
+          {"referenceId": "flammable-powder-1", "label": "Flammable powder"},
+          {"referenceId": "climbing-rope-1", "label": "Climbing rope"},
+          {"referenceId": "scaffolding-pack-1", "label": "Scaffolding pack"}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "Tools",
+        "columns": 7,
+        "recipes": [
+          {"referenceId": "flimsy-knife-1", "label": "Flimsy knife"},
+          {"referenceId": "crude-cleaver-1", "label": "Crude cleaver"},
+          {"referenceId": "machete-1", "label": "Machete"},
+          {"referenceId": "titanium-machete-1", "label": "Titanium machete"},
+          {"referenceId": "makeshift-wrench-1", "label": "Makeshift wrench"},
+          {"referenceId": "wrench-1", "label": "Wrench"},
+          {"referenceId": "titanium-multitool-1", "label": "Titanium multitool"},
+          {"referenceId": "makeshift-digging-tool-1", "label": "Makeshift digging tool"},
+          {"referenceId": "pickaxe-1", "label": "Pickaxe"},
+          {"referenceId": "titanium-pickaxe-1", "label": "Titanium pickaxe"},
+          {"referenceId": "mini-laser-drill-1", "label": "Mini laser drill"},
+          {"referenceId": "drill-repair-kit-1", "label": "Drill repair kit"},
+          {"referenceId": "lock-picking-kit-1", "label": "Lock-picking kit"}
+        ]
+      },
+      {
+        "group": "Power & electronics",
+        "columns": 5,
+        "recipes": [
+          {"referenceId": "processed-copper-1", "label": "Processed copper"},
+          {"referenceId": "bundle-of-wires-1", "label": "Bundle of wires"},
+          {"referenceId": "circuit-board-1", "label": "Circuit board (repair)", "output": "Circuit board", "repair": true},
+          {"referenceId": "lcd-screen-1", "label": "LCD screen"},
+          {"referenceId": "geiger-counter-1", "label": "Geiger counter"},
+          {"referenceId": "terrain-scanner-1", "label": "Terrain scanner"},
+          {"referenceId": "small-battery-1", "label": "Small battery"},
+          {"referenceId": "medium-battery-1", "label": "Medium battery"},
+          {"referenceId": "large-battery-1", "label": "Large battery"},
+          {"referenceId": "hand-crank-charger-1", "label": "Hand crank charger"}
+        ]
+      }
+    ],
+    [
+      {
+        "group": "Armor & wear",
+        "columns": 6,
+        "recipes": [
+          {"referenceId": "makeshift-helmet-1", "label": "Makeshift helmet"},
+          {"referenceId": "bicycle-helmet-1", "label": "Bicycle helmet"},
+          {"referenceId": "riot-helmet-1", "label": "Riot helmet"},
+          {"referenceId": "wood-sandals-1", "label": "Wood sandals"},
+          {"referenceId": "tactical-boots-1", "label": "Tactical boots"},
+          {"referenceId": "advanced-scuba-diving-gear-1", "label": "Advanced scuba diving gear"},
+          {"referenceId": "limb-wraps-1", "label": "Limb wraps"},
+          {"referenceId": "tactical-gloves-1", "label": "Tactical gloves"},
+          {"referenceId": "trauma-rig-1", "label": "Trauma rig"},
+          {"referenceId": "belt-1", "label": "Belt"},
+          {"referenceId": "scarf-1", "label": "Scarf"},
+          {"referenceId": "merc-scarf-1", "label": "M.E.R.C. scarf"}
+        ]
+      },
+      {
+        "group": "Arms & ammo",
+        "columns": 6,
+        "recipes": [
+          {"referenceId": "casing-1", "label": "Casing"},
+          {"referenceId": "9mm-round-1", "label": "9mm round"},
+          {"referenceId": "magazine-base-1", "label": "Magazine base"},
+          {"referenceId": "small-magazine-1", "label": "Small magazine"},
+          {"referenceId": "makeshift-rifle-1", "label": "Makeshift rifle"},
+          {"referenceId": "556-round-1", "label": "5.56 round"},
+          {"referenceId": "rifle-magazine-1", "label": "Rifle magazine"},
+          {"referenceId": "12-gauge-buckshot-1", "label": "12-Gauge buckshot"},
+          {"referenceId": "box-of-12-gauge-1", "label": "Box of 12-Gauge"},
+          {"referenceId": "dynamite-1", "label": "Dynamite"}
+        ]
+      }
+    ]
+  ]
+}
