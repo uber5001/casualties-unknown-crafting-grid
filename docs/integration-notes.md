@@ -106,3 +106,11 @@ The user's in-game screenshot confirmed the inline grid and exposed search text 
 - Removed custom ingredient bills, producer reverse indexes, ingredient-pocket geometry, yield/count badges, tooltip rendering, and hover timing. The top line now reads “Right click to quick craft”.
 - Release build succeeded with zero warnings/errors. 83 updated executable checks passed for the retained layout, modded catalogs, category tint, search privacy, and full-width sizing; obsolete ingredient-pocket and hover-timer tests were removed with those features.
 - Installed DLL SHA-256 matched the build: `590DD5B9227316EBD981D9327C0447C16807330E5E8B697CF054541FC45879C3`. A real in-game opening logged successful 0.3.0 attachment with 136 displayed recipes, 10 columns × 17 rows, game 1.0, Unity 2022.3.62f3. The new mouse actions, native tooltip/marks, search clipping fix, and icon-size appearance await the user's check.
+
+## 0.3.1 selected-recipe requirement badges
+
+The user's screenshot confirmed native tooltip rendering, corrected search text, and the wider grid, but showed availability badges on every known recipe. That was a misinterpretation: badges should describe only the inputs of the currently selected recipe.
+
+The grid now queries that recipe's `GetItemsForRecipeThorough()` allocation and projects its requirement states onto matching known output tiles. Unrelated recipes and the selected parent receive no badge. Repeated slots aggregate to X if any are missing. A fulfilled alternative marks only the actual allocated provider's output; a missing alternative marks eligible producer choices using native item/liquid quality metadata. Unknown identities remain concealed. Badges update immediately on left-click selection, after native crafting refreshes, and on relevant inventory or selection changes; hovering does not change the badge context.
+
+Build succeeded with zero warnings/errors; the 83 retained layout/search/width checks passed. The installed 0.3.1 DLL matched the release build (SHA-256 `0C6E8527A907EBB2009BBA8E8C036605FADF6466A3A91631AB0E91E3C05CCD18`). Selected-requirement badge appearance still needs the user's live check.

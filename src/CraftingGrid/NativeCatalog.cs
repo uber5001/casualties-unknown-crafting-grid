@@ -84,6 +84,26 @@ namespace CasualtiesUnknown.CraftingGrid
             string.Join(";", r.items.Select(s => (s.specific ? s.specificId : "quality:"+s.quality?.id+":"+s.quality?.amount) + ":"+s.isLiquid+":"+s.minimumCondition+":"+s.destroyItem+":"+s.noMaxCondition+":"+s.ignoredId)) + ":" + r.result.amount;
         public static bool Known(Recipe r) => r.visible;
         public static bool Ready(Recipe r) => Known(r) && r.GetItemsForRecipe() != null;
+        public static string RequirementOutputId(RecipeItem slot, Item allocated)
+        {
+            if (slot.specific) return slot.specificId;
+            if (!allocated) return null;
+            if (!slot.isLiquid) return allocated.id;
+            if (allocated.TryGetComponent<WaterContainerItem>(out var water))
+                foreach (var stack in water.stack)
+                    if (Liquids.Registry.TryGetValue(stack.liquidId,out var liquid) && Item.GetQualityThatMeetsCriteria(slot.quality,liquid.GetScaledQualities(stack.amount)) != null) return stack.liquidId;
+            return null;
+        }
+        public static bool IsRequirementOutput(Recipe recipe, RecipeItem slot, string allocatedId, bool available)
+        {
+            var output = recipe.result;
+            if (output.isLiquid != slot.isLiquid || !slot.isLiquid && output.id == slot.ignoredId) return false;
+            if (allocatedId != null) return output.id == allocatedId;
+            if (available) return false;
+            // A missing alternative slot marks eligible producer choices; a fulfilled slot marks its actual provider only.
+            if (slot.isLiquid) return Liquids.Registry.TryGetValue(output.id,out var liquid) && Item.HasCommonQuality(slot.quality,liquid.qualities) != null;
+            return Item.GlobalItems.TryGetValue(output.id,out var item) && Item.GetQualityThatMeetsCriteria(slot.quality,item.qualities) != null;
+        }
         public static List<Item> Scope(PlayerCamera pc)
         {
             var scope = pc.body.GetAllItemsThorough();

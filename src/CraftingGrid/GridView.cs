@@ -40,6 +40,8 @@ namespace CasualtiesUnknown.CraftingGrid
         }
         public PlayerCamera Camera { get; private set; }
         readonly List<Tile> tiles = new List<Tile>();
+        readonly Dictionary<Recipe,bool> requirementBadges = new Dictionary<Recipe,bool>();
+        Recipe badgeSelection;
         static readonly FieldInfo CategoryField = AccessTools.Field(typeof(PlayerCamera), "selectedRecipeCategory");
         NativeCatalog catalog;
         BoardLayout layout;
@@ -263,6 +265,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 tile.Known = NativeCatalog.Known(tile.Entry.Recipe);
                 tile.Ready = tile.Known && tile.Entry.Recipe.GetItemsForRecipe() != null;
             }
+            UpdateRequirementBadges();
             fingerprint = NativeCatalog.Fingerprint(Camera);
             PaintTiles(); nextPoll = Time.unscaledTime+.4f;
         }
@@ -281,10 +284,29 @@ namespace CasualtiesUnknown.CraftingGrid
                 tile.Icon.color = color;
                 tile.Level.gameObject.SetActive(tile.Known && tile.Visible && hovered == tile);
                 tile.Level.text = recipe.INT.ToString(); tile.Level.color = Camera.RecipeINTToColor(recipe.INT);
-                tile.Status.gameObject.SetActive(tile.Known);
-                tile.Status.text = tile.Ready ? "<sprite index=23>" : "<sprite index=24>";
+                bool hasBadge = requirementBadges.TryGetValue(recipe,out var requirementAvailable) && tile.Known;
+                tile.Status.gameObject.SetActive(hasBadge);
+                if (hasBadge) tile.Status.text = requirementAvailable ? "<sprite index=23>" : "<sprite index=24>";
                 tile.Tooltip.tipName = tile.Known ? recipe.simpleName : Locale.GetOther("unknownobject");
                 tile.Tooltip.tipDesc = tile.Known ? recipe.description : "";
+            }
+        }
+        Recipe SelectedRecipe() => Camera.selectedRecipe >= 0 && Camera.selectedRecipe < Recipes.recipes.Count ? Recipes.recipes[Camera.selectedRecipe] : null;
+        void UpdateRequirementBadges()
+        {
+            requirementBadges.Clear(); badgeSelection = SelectedRecipe();
+            if (badgeSelection == null || !NativeCatalog.Known(badgeSelection)) return;
+            var allocation = badgeSelection.GetItemsForRecipeThorough();
+            for (int i = 0; i < badgeSelection.items.Count; i++)
+            {
+                var slot = badgeSelection.items[i]; bool available = allocation[i];
+                string id = NativeCatalog.RequirementOutputId(slot,allocation[i]);
+                foreach (var tile in tiles)
+                {
+                    var recipe = tile.Entry.Recipe;
+                    if (!tile.Known || recipe == badgeSelection || !NativeCatalog.IsRequirementOutput(recipe,slot,id,available)) continue;
+                    requirementBadges[recipe] = available && (!requirementBadges.TryGetValue(recipe,out var previous) || previous);
+                }
             }
         }
         void Hover(Tile tile)
@@ -297,7 +319,7 @@ namespace CasualtiesUnknown.CraftingGrid
         {
             if (gridMode != true || !tile.Visible || !tile.Known) return;
             int index = Recipes.recipes.IndexOf(tile.Entry.Recipe);
-            if (index >= 0) Camera.SelectRecipe(index);
+            if (index >= 0) { Camera.SelectRecipe(index); UpdateRequirementBadges(); PaintTiles(); }
         }
         public bool ShouldKeepOpenForQuickCraft(PlayerCamera camera)
         {
@@ -346,6 +368,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 if (!catalog.IsCurrent) { RebuildCatalog(); RefreshState(); }
                 else if (Math.Abs(width-viewport.rect.width) > 2) { RebuildLayout(); RefreshState(); }
                 else if (NativeCatalog.Fingerprint(Camera) != fingerprint) RefreshState();
+                else if (SelectedRecipe() != badgeSelection) { UpdateRequirementBadges(); PaintTiles(); }
             });
         }
         void OnDisable() { if (!restored && catalog != null) ClearHover(); }

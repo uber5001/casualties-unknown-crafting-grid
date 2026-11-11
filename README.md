@@ -2,7 +2,7 @@
 
 Native crafting presentation mod requested by uber5001. The complete specification and interactive visual fixture are preserved in [handoff/PROMPT.md](handoff/PROMPT.md) and [handoff/crafting-reference.html](handoff/crafting-reference.html).
 
-**Status:** quick prototype, version 0.3.0. Reads the live retail recipe registry and reuses native icons, tooltips, selection, and crafting. Additional recipes, levels, categories, and alternate recipes are derived dynamically. Inventory, translation, and hovering do not determine tile positions.
+**Status:** quick prototype, version 0.3.1. Reads the live retail recipe registry and reuses native icons, tooltips, selection, and crafting. Additional recipes, levels, categories, and alternate recipes are derived dynamically. Inventory, translation, and hovering do not determine tile positions.
 
 Open `handoff/crafting-reference.html` in a desktop browser to exercise the sample. Its catalog, stock, art, font, and crafting model are test fixtures only; none are embedded in the plugin. The user waived the initial hands-on reference requirement in favor of using its source and trying a quick native prototype.
 
@@ -12,7 +12,7 @@ Levels progress downward and categories progress across the grid: the canonical 
 
 **Left-click selects** the recipe through the original `SelectRecipe` action and updates the right-hand information. **Right-click quick-crafts** one attempt through `TryCraft`, after resolving the current registry entry and rechecking native eligibility. A short “Right click to quick craft” hint occupies the top line. The default right-click close binding is suppressed only over grid tiles; C, Escape, and clicks outside tiles keep their native behavior.
 
-Hover uses the same native `UITooltip` component and name/description as a vanilla recipe row. It reveals only the numeric INT requirement in the top-left corner, using the native list font/style and `RecipeINTToColor` colors. The native green check / red X sprites show whether a known recipe's requirements are currently met. Full-color ready art, 7% dimmed grayscale unavailable art, and anonymous unknown slots remain.
+Hover uses the same native `UITooltip` component and name/description as a vanilla recipe row. It reveals only the numeric INT requirement in the top-left corner, using the native list font/style and `RecipeINTToColor` colors. Native green check / red X sprites appear **only on recipes producing inputs for the currently selected recipe**. They reflect the selected recipe's native ingredient allocation, not each tile's own craftability. Repeated requirements show X if any required slot is missing. A fulfilled alternative marks its actual provider; a missing alternative marks eligible producer choices. Unrelated, unknown, and selected-parent tiles have no badge. Full-color ready art, 7% dimmed grayscale unavailable art, and anonymous unknown slots remain.
 
 Category buttons tint matching known recipes in their category color instead of hiding anything. All-categories clears those backgrounds. Search still hides unmatched tiles in place, preserving every slot. The search text area and placeholder resize with the field so the Grid checkbox does not clip the start of “Search recipes”.
 
