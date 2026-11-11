@@ -4,27 +4,12 @@ namespace CasualtiesUnknown.CraftingGrid
 {
     public static class GridRules
     {
-        public static bool MatchesFilter(bool known, string name, string category, string selectedCategory, string search)
+        public static float CellSide(float viewportWidth, int columns)
         {
-            // Search overrides category in the native menu. Unknown names must not leak through search.
-            if (!string.IsNullOrEmpty(search)) return known && name.IndexOf(search,StringComparison.OrdinalIgnoreCase) >= 0;
-            return selectedCategory == null || category == selectedCategory;
+            if (columns < 1) throw new ArgumentOutOfRangeException(nameof(columns));
+            return Math.Max(37,(viewportWidth-8-2*(columns-1))/columns);
         }
-        public static bool Visible(bool known, bool matchesFilter, bool ingredientRelated) => matchesFilter || known && ingredientRelated;
-    }
-    public sealed class HoverDelay<T> where T : class
-    {
-        readonly float delay;
-        T pending;
-        float due;
-        public HoverDelay(float seconds) { delay = seconds; }
-        public void Enter(T item, float now) { pending = item; due = now+delay; }
-        public void Leave(T item) { if (ReferenceEquals(item,pending)) pending = null; }
-        public void Clear() { pending = null; }
-        public T TakeReady(float now)
-        {
-            if (pending == null || now < due) return null;
-            T result = pending; pending = null; return result;
-        }
+        public static bool MatchesSearch(bool known, string name, string search) => string.IsNullOrEmpty(search) || known && name.IndexOf(search,StringComparison.OrdinalIgnoreCase) >= 0;
+        public static bool HighlightCategory(bool known, string category, string selectedCategory) => known && selectedCategory != null && category == selectedCategory;
     }
 }

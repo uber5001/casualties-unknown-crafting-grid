@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    [BepInPlugin(Id, "Crafting Grid", "0.2.0")]
+    [BepInPlugin(Id, "Crafting Grid", "0.3.0")]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string Id = "uber5001.casualtiesunknown.craftinggrid";
@@ -28,7 +28,7 @@ namespace CasualtiesUnknown.CraftingGrid
             active.SettingChanged += (_, __) => { if (!active.Value) RemoveView(); };
             useGrid.SettingChanged += (_, __) => { if (view && view.Camera) view.Camera.RefreshRecipeList(); };
             InstallPatches();
-            Logger.LogInfo("Crafting Grid 0.2.0 ready; catalog is read from the live retail registry when crafting opens.");
+            Logger.LogInfo("Crafting Grid 0.3.0 ready; catalog is read from the live retail registry when crafting opens.");
         }
         internal bool UseGrid => useGrid.Value;
         internal void SetGridMode(bool value) { useGrid.Value = value; }
@@ -44,6 +44,10 @@ namespace CasualtiesUnknown.CraftingGrid
             var info = target == null ? null : Harmony.GetPatchInfo(target);
             if (info == null || !info.Postfixes.Any(p => p.owner == Id))
                 throw new InvalidOperationException("Crafting Grid failed to register its RefreshRecipeList postfix. Vanilla crafting remains available.");
+            var open = AccessTools.Method(typeof(PlayerCamera), nameof(PlayerCamera.OpenCraftScreen), Type.EmptyTypes);
+            var closeInfo = open == null ? null : Harmony.GetPatchInfo(open);
+            if (closeInfo == null || !closeInfo.Prefixes.Any(p => p.owner == Id))
+                throw new InvalidOperationException("Crafting Grid failed to register its right-click close-binding guard.");
             Logger.LogInfo("Verified Harmony postfix on "+target.DeclaringType.FullName+"."+target.Name+" from "+target.Module.Assembly.Location);
         }
         void RemoveView() { if (view) { view.RestoreVanilla(); Destroy(view.gameObject); view = null; } }
@@ -79,6 +83,16 @@ namespace CasualtiesUnknown.CraftingGrid
         {
             [HarmonyPostfix]
             static void Postfix(PlayerCamera __instance) { if (Instance) Instance.Refresh(__instance); }
+        }
+        [HarmonyPatch(typeof(PlayerCamera), nameof(PlayerCamera.OpenCraftScreen))]
+        static class KeepOpenForQuickCraft
+        {
+            static bool Prefix(PlayerCamera __instance)
+            {
+                if (!Instance || !Instance.view) return true;
+                try { return !Instance.view.ShouldKeepOpenForQuickCraft(__instance); }
+                catch (Exception ex) { Instance.Fail(ex); return true; }
+            }
         }
     }
 }

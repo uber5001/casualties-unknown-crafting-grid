@@ -91,3 +91,18 @@ The user revised the design to keep the original crafting interface, transpose t
 - The surface is black and unavailable idle icons use 7% opacity; the inspected unavailable icon retains its local brightness lift.
 - Release build: zero warnings/errors. 151 executable checks passed, including transposed geometry, modded catalogs, ingredient pockets, filter exceptions, and hover delay/cancellation.
 - The installed DLL matched the build (SHA-256 `C5C77794DD1095BDDC5F85E71719EF9177438FD2CDC048CC456BEC22C329CA18`). A real in-game C press logged successful inline attachment in game 1.0: 137 registered recipes, 136 displayed, 10 columns × 17 rows. The checkbox/filter/hover visual and behavior check is pending user feedback.
+
+## 0.3.0 simplified native interactions
+
+The user's in-game screenshot confirmed the inline grid and exposed search text clipping and excess unused width. The user requested removing the custom ingredient presentation and hover-driven selection in favor of native controls.
+
+- Left-click now calls native `SelectRecipe` with the recipe's current registry index. Hover no longer selects or updates the right-hand pane. Right-click rechecks eligibility and calls native `TryCraft` once.
+- The default native `iteminteract` binding is `Mouse1`, and `HandleInput` closes crafting on that binding. A narrow prefix on `OpenCraftScreen` preserves the open menu only for right-clicks over grid tiles. Explicit crafting/pause/wound-view keys, other pointer locations, and vanilla-list mode retain native behavior. Patch ownership is verified for both integration points.
+- `UITooltip` was verified as a data component read by `UIUtil.GetUITooltip` from the current UI raycasts, then displayed by `GlobalDark.HandleTooltip`. Each grid tile now uses this exact component and the native recipe row's `simpleName`/`description` fields. No custom tooltip renderer remains.
+- The native recipe prefab's INT label supplies its font/material/style, and `RecipeINTToColor` supplies its colors. The hover label is the number alone, matching vanilla. Availability badges use the same native `<sprite index=23>` / `<sprite index=24>` check/X glyphs as `IngredientTextForRecipe`.
+- Cell size derives only from the viewport width, with a readable minimum and vertical overflow. Native preview sizing was traced to `ImageSizeDelta(texture, 12, 150)`: this natural pixel size and cap are scaled to the grid cell, using individual sprite-region dimensions for atlases. Small icons retain their native relative sizes.
+- Category selection now applies category background tint only. Other categories stay visible. Search keeps its existing anonymous-slot-safe filtering behavior.
+- The native input field's text viewport, text component, and placeholder are re-anchored to preserve their edge insets before the field shrinks for the checkbox. All original geometry is saved for restoration.
+- Removed custom ingredient bills, producer reverse indexes, ingredient-pocket geometry, yield/count badges, tooltip rendering, and hover timing. The top line now reads “Right click to quick craft”.
+- Release build succeeded with zero warnings/errors. 83 updated executable checks passed for the retained layout, modded catalogs, category tint, search privacy, and full-width sizing; obsolete ingredient-pocket and hover-timer tests were removed with those features.
+- Installed DLL SHA-256 matched the build: `590DD5B9227316EBD981D9327C0447C16807330E5E8B697CF054541FC45879C3`. A real in-game opening logged successful 0.3.0 attachment with 136 displayed recipes, 10 columns × 17 rows, game 1.0, Unity 2022.3.62f3. The new mouse actions, native tooltip/marks, search clipping fix, and icon-size appearance await the user's check.
