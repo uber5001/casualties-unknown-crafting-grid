@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    [BepInPlugin(Id, "Crafting Grid", "0.3.4")]
+    [BepInPlugin(Id, "Crafting Grid", "0.4.0")]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string Id = "uber5001.casualtiesunknown.craftinggrid";
@@ -22,13 +22,15 @@ namespace CasualtiesUnknown.CraftingGrid
         GridView view;
         void Awake()
         {
+            // Same persistence flags as BepInEx's HideManagerGameObject option, without a manual config edit.
+            gameObject.hideFlags |= HideFlags.HideAndDontSave;
             Instance = this; Log = Logger;
             active = Config.Bind("General", "Enabled", true, "Replace the crafting presentation. False restores vanilla crafting.");
             useGrid = Config.Bind("General", "UseGrid", true, "Use the icon grid in the native recipe scroll area. The in-menu Grid checkbox changes this preference.");
             active.SettingChanged += (_, __) => { if (!active.Value) RemoveView(); };
             useGrid.SettingChanged += (_, __) => { if (view && view.Camera) view.Camera.RefreshRecipeList(); };
             InstallPatches();
-            Logger.LogInfo("Crafting Grid 0.3.4 ready; catalog is read from the live retail registry when crafting opens.");
+            Logger.LogInfo("Crafting Grid 0.4.0 ready; manager persistence applied automatically. Catalog is read from the live retail registry when crafting opens.");
         }
         internal bool UseGrid => useGrid.Value;
         internal void SetGridMode(bool value) { useGrid.Value = value; }

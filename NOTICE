@@ -1,0 +1,9 @@
+The MIT license covers the original Crafting Grid code and authored recipe arrangement.
+
+Casualties: Unknown, its art, fonts, and other game assets belong to their respective owners.
+The plugin reads these assets from the installed game; the binary release does not include them.
+BepInEx, Harmony, Unity, TextMesh Pro, and Newtonsoft.Json are external runtime dependencies,
+with their own licenses, and are not redistributed in the Crafting Grid ZIP.
+
+The development-only handoff reference contains third-party reference artwork and a font.
+It is not part of the installed mod or the MIT license grant and is excluded from the binary release.

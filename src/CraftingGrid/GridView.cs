@@ -36,12 +36,13 @@ namespace CasualtiesUnknown.CraftingGrid
             public TextMeshProUGUI Unknown, Level, Status;
             public UITooltip Tooltip;
             public CanvasGroup Visibility;
-            public GameObject Selection;
+            public GameObject Selection, UsedIn;
             public bool Known, Ready, Visible;
         }
         public PlayerCamera Camera { get; private set; }
         readonly List<Tile> tiles = new List<Tile>();
         readonly Dictionary<Recipe,bool> requirementBadges = new Dictionary<Recipe,bool>();
+        readonly HashSet<Recipe> usedInBadges = new HashSet<Recipe>();
         readonly Dictionary<string,Color> categoryTints = new Dictionary<string,Color>();
         Recipe badgeSelection;
         static readonly FieldInfo CategoryField = AccessTools.Field(typeof(PlayerCamera), "selectedRecipeCategory");
@@ -307,6 +308,10 @@ namespace CasualtiesUnknown.CraftingGrid
                 tile.Level.fontSharedMaterial = nativeIntStyle.fontSharedMaterial; tile.Level.fontStyle = nativeIntStyle.fontStyle;
                 tile.Level.fontSize = Mathf.Min(nativeIntStyle.fontSize,cellSide*.38f);
                 tile.Status = CornerText("NativeAvailability",rect,false); tile.Status.richText = true;
+                var usedIn = Rect("UsedIn",rect); usedIn.anchorMin = usedIn.anchorMax = usedIn.pivot = Vector2.one;
+                usedIn.anchoredPosition = new Vector2(-3,-3); usedIn.sizeDelta = new Vector2(5,5);
+                var dot = usedIn.gameObject.AddComponent<Image>(); dot.color = Color.white; dot.raycastTarget = false;
+                tile.UsedIn = usedIn.gameObject;
                 tile.Selection = SelectionFrame(rect);
                 tile.Tooltip = rect.gameObject.AddComponent<UITooltip>(); tile.Tooltip.skipLocale = true;
                 var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = tile.Background; button.transition = Selectable.Transition.None;
@@ -349,6 +354,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 tile.Visibility.alpha = tile.Visible ? 1 : 0; tile.Visibility.interactable = tile.Visible; tile.Visibility.blocksRaycasts = tile.Visible;
                 tile.Background.color = GridRules.HighlightCategory(tile.Known,tile.Entry.Layout.Category,categoryFilter) && categoryTints.TryGetValue(tile.Entry.Layout.Category,out var tint) ? tint : Color.clear;
                 tile.Selection.SetActive(tile.Known && recipe == selected);
+                tile.UsedIn.SetActive(tile.Known && usedInBadges.Contains(recipe));
                 tile.Unknown.gameObject.SetActive(!tile.Known); tile.Icon.gameObject.SetActive(tile.Known && tile.Entry.Sprite);
                 tile.Icon.sprite = tile.Ready ? tile.Entry.Sprite : tile.Entry.Gray;
                 var color = tile.Entry.Color;
@@ -366,8 +372,14 @@ namespace CasualtiesUnknown.CraftingGrid
         Recipe SelectedRecipe() => Camera.selectedRecipe >= 0 && Camera.selectedRecipe < Recipes.recipes.Count ? Recipes.recipes[Camera.selectedRecipe] : null;
         void UpdateRequirementBadges()
         {
-            requirementBadges.Clear(); badgeSelection = SelectedRecipe();
+            requirementBadges.Clear(); usedInBadges.Clear(); badgeSelection = SelectedRecipe();
             if (badgeSelection == null || !NativeCatalog.Known(badgeSelection)) return;
+            foreach (var tile in tiles)
+            {
+                var consumer = tile.Entry.Recipe;
+                if (tile.Known && consumer != badgeSelection && consumer.items.Any(slot =>
+                    NativeCatalog.IsRequirementOutput(badgeSelection,slot,slot.specific ? slot.specificId : null,false))) usedInBadges.Add(consumer);
+            }
             var allocation = badgeSelection.GetItemsForRecipeThorough();
             for (int i = 0; i < badgeSelection.items.Count; i++)
             {
