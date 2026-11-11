@@ -36,7 +36,7 @@ Check(modded.Cells.ContainsKey(200) && modded.Cells.Count == 138,"New levels and
 var manyCategories = Enumerable.Range(0,14).Select(i => new LayoutEntry { Key=i,Level=5,Category="Category"+i,SortName="Test",StableId=i.ToString() });
 Check(GridLayout.Create(manyCategories).Strips[0].Height == 14,"Height target must expand for more than ten categories");
 var vertical = GridLayout.CreateVertical(entries);
-Check(vertical.Columns == 10 && vertical.Strips.Single().Height == 17,"Inline grid must transpose to 10×17");
+Check(vertical.Columns == 10 && vertical.Strips.Single().Height == 17,"Current reference-layout fixture transposes to 10×17; this is not a product layout requirement");
 Check(vertical.Cells.All(kv => kv.Value.X == board.Cells[kv.Key].Y && kv.Value.Y == board.Cells[kv.Key].X),"Transposition must preserve canonical recipe neighborhoods");
 Check(vertical.Cells.Values.Distinct().Count() == 137,"Transposed recipes must have unique reserved slots");
 Check(GridLayout.CreateVertical(modified).Cells.Count == 138,"Transposed layout must include added recipes");
@@ -54,4 +54,11 @@ foreach (float viewport in new[] { 500f,600f,900f })
 }
 Check(GridRules.CellSide(900,10) > 56,"A wide viewport must not retain the old 56-unit cap");
 Check(GridRules.CellSide(200,10) == 37,"Narrow/modded catalogs retain a readable minimum with overflow");
-Console.WriteLine($"Passed {checks} checks: dynamic/transposed geometry, reserved slots, category tint, search privacy, and full-width sizing.");
+Check(GridRules.ScrollbarInsets(600,580,600) == (0f,22f),"Overlapping right scrollbar needs its width plus clearance");
+Check(GridRules.ScrollbarInsets(580,580,600) == (0f,0f),"Already-excluded scrollbar must not consume width twice");
+Check(GridRules.ScrollbarInsets(600,-5,15) == (17f,0f),"Left scrollbar needs left-side clearance");
+Check(GridRules.ScrollbarInsets(600,590,610) == (0f,12f),"Partially overlapping scrollbar reserves only the overlap and gap");
+Check(GridRules.ScrollbarInsets(600,-30,-10) == (0f,0f),"Non-overlapping scrollbar leaves usable space unchanged");
+float safeWidth = 600-GridRules.ScrollbarInsets(600,580,600).end;
+Check(Math.Abs(8+10*GridRules.CellSide(safeWidth,10)+18-578) < .001f,"Last column must stop before the scrollbar clearance");
+Console.WriteLine($"Passed {checks} checks: current geometry, reserved slots, category tint, search privacy, sizing, and scrollbar clearance.");

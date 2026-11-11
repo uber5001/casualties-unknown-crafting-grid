@@ -36,16 +36,18 @@ namespace CasualtiesUnknown.CraftingGrid
             public TextMeshProUGUI Unknown, Level, Status;
             public UITooltip Tooltip;
             public CanvasGroup Visibility;
+            public GameObject Selection;
             public bool Known, Ready, Visible;
         }
         public PlayerCamera Camera { get; private set; }
         readonly List<Tile> tiles = new List<Tile>();
         readonly Dictionary<Recipe,bool> requirementBadges = new Dictionary<Recipe,bool>();
+        readonly Dictionary<string,Color> categoryTints = new Dictionary<string,Color>();
         Recipe badgeSelection;
         static readonly FieldInfo CategoryField = AccessTools.Field(typeof(PlayerCamera), "selectedRecipeCategory");
         NativeCatalog catalog;
         BoardLayout layout;
-        RectTransform viewport, content, stockContent, searchRect, clearRect;
+        RectTransform viewport, stockViewport, content, stockContent, searchRect, clearRect;
         ScrollRect scroll;
         CanvasGroup stockGroup;
         GridBoundary boundary;
@@ -64,7 +66,6 @@ namespace CasualtiesUnknown.CraftingGrid
         float cellSide, width, nextPoll;
         int fingerprint, lastCraftFrame = -1;
         readonly Color ink = Color.white;
-        static readonly Color Surface = Color.black;
         sealed class RectState
         {
             readonly RectTransform rect;
@@ -89,8 +90,13 @@ namespace CasualtiesUnknown.CraftingGrid
             scroll = camera.recipeScrollRect;
             stockContent = scroll.content;
             if (stockContent != camera.recipeListContent) throw new InvalidOperationException("Native recipe ScrollRect.content differs from recipeListContent; cannot safely switch views.");
-            viewport = scroll.viewport ? scroll.viewport : stockContent.parent as RectTransform;
-            if (!viewport) throw new InvalidOperationException("Native recipe scroll viewport is missing.");
+            stockViewport = scroll.viewport ? scroll.viewport : stockContent.parent as RectTransform;
+            if (!stockViewport) throw new InvalidOperationException("Native recipe scroll viewport is missing.");
+            viewport = Rect("CraftingGridViewport",stockViewport);
+            Stretch(viewport,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            UpdateGridViewport();
+            ReadCategoryTints();
             stockHorizontal = scroll.horizontal;
             stockScroll = new Vector2(scroll.horizontalNormalizedPosition,scroll.verticalNormalizedPosition);
             stockGroup = stockContent.GetComponent<CanvasGroup>(); stockGroupAdded = !stockGroup;
@@ -107,6 +113,47 @@ namespace CasualtiesUnknown.CraftingGrid
             Canvas.ForceUpdateCanvases();
             RefreshState();
             Plugin.Log.LogInfo($"Inline crafting interface attached to native scroll area. Game {Application.version}, Unity {Application.unityVersion}.");
+        }
+        void UpdateGridViewport()
+        {
+            Vector2 start = Vector2.zero, end = Vector2.zero;
+            Reserve(scroll.verticalScrollbar,true); Reserve(scroll.horizontalScrollbar,false);
+            viewport.offsetMin = start; viewport.offsetMax = -end;
+
+            void Reserve(Scrollbar bar, bool vertical)
+            {
+                if (!bar) return;
+                var corners = new Vector3[4]; ((RectTransform)bar.transform).GetWorldCorners(corners);
+                var points = corners.Select(stockViewport.InverseTransformPoint).ToArray();
+                float left = points.Min(p => p.x), right = points.Max(p => p.x), bottom = points.Min(p => p.y), top = points.Max(p => p.y);
+                var area = stockViewport.rect;
+                if (vertical)
+                {
+                    if (top <= area.yMin || bottom >= area.yMax) return;
+                    var inset = GridRules.ScrollbarInsets(area.width,left-area.xMin,right-area.xMin);
+                    start.x = inset.start; end.x = inset.end;
+                }
+                else
+                {
+                    if (right <= area.xMin || left >= area.xMax) return;
+                    var inset = GridRules.ScrollbarInsets(area.height,bottom-area.yMin,top-area.yMin);
+                    start.y = inset.start; end.y = inset.end;
+                }
+            }
+        }
+        void ReadCategoryTints()
+        {
+            for (int i = 1; i < Camera.recipeCategorySelectImages.Length; i++)
+            {
+                var button = Camera.recipeCategorySelectImages[i];
+                if (!button) continue;
+                string category = ((Recipes.RecipeCategory)(i-1)).ToString();
+                Color color;
+                try { color = NativeFilterColors.Read(button); }
+                catch (Exception ex) { Plugin.Log.LogWarning($"Could not sample native {category} filter icon: {ex.Message}"); color = button.color; }
+                categoryTints[category] = Color.Lerp(Color.black,color,.18f);
+                Plugin.Log.LogInfo($"Native {category} filter hue: #{ColorUtility.ToHtmlStringRGB(color)}.");
+            }
         }
         void CreateGridToggle()
         {
@@ -165,7 +212,9 @@ namespace CasualtiesUnknown.CraftingGrid
             gridMode = wanted;
             stockGroup.alpha = wanted ? 0 : stockAlpha;
             stockGroup.interactable = !wanted && stockInteractable; stockGroup.blocksRaycasts = !wanted && stockRaycasts;
+            viewport.gameObject.SetActive(wanted);
             content.gameObject.SetActive(wanted);
+            scroll.viewport = wanted ? viewport : stockViewport;
             scroll.content = wanted ? content : stockContent;
             scroll.horizontal = wanted ? content.rect.width > viewport.rect.width+1 : stockHorizontal;
             scroll.normalizedPosition = wanted ? gridScroll : stockScroll;
@@ -197,6 +246,22 @@ namespace CasualtiesUnknown.CraftingGrid
             text.alignment = top ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.BottomRight;
             Stretch(text.rectTransform,new Vector2(0,top ? 1 : 0),new Vector2(1,top ? 1 : 0),new Vector2(2,top ? -28 : 1),new Vector2(-2,top ? -1 : 28));
             return text;
+        }
+        GameObject SelectionFrame(RectTransform tile)
+        {
+            var frame = Rect("SelectedRecipe",tile);
+            Stretch(frame,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+            Edge("Left",Vector2.zero,new Vector2(0,1),Vector2.zero,new Vector2(2,0));
+            Edge("Right",new Vector2(1,0),Vector2.one,new Vector2(-2,0),Vector2.zero);
+            Edge("Top",new Vector2(0,1),Vector2.one,new Vector2(0,-2),Vector2.zero);
+            Edge("Bottom",Vector2.zero,new Vector2(1,0),Vector2.zero,new Vector2(0,2));
+            return frame.gameObject;
+
+            void Edge(string name, Vector2 min, Vector2 max, Vector2 low, Vector2 high)
+            {
+                var edge = Rect(name,frame); Stretch(edge,min,max,low,high);
+                var image = edge.gameObject.AddComponent<Image>(); image.color = Color.white; image.raycastTarget = false;
+            }
         }
         void RebuildCatalog()
         {
@@ -239,6 +304,7 @@ namespace CasualtiesUnknown.CraftingGrid
                 tile.Level.fontSharedMaterial = nativeIntStyle.fontSharedMaterial; tile.Level.fontStyle = nativeIntStyle.fontStyle;
                 tile.Level.fontSize = Mathf.Min(nativeIntStyle.fontSize,cellSide*.38f);
                 tile.Status = CornerText("NativeAvailability",rect,false); tile.Status.richText = true;
+                tile.Selection = SelectionFrame(rect);
                 tile.Tooltip = rect.gameObject.AddComponent<UITooltip>(); tile.Tooltip.skipLocale = true;
                 var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = tile.Background; button.transition = Selectable.Transition.None;
                 button.onClick.AddListener(() => Guard(() => Select(tile)));
@@ -256,6 +322,7 @@ namespace CasualtiesUnknown.CraftingGrid
         {
             if (restored) return;
             bool wanted = Plugin.Instance.UseGrid;
+            UpdateGridViewport();
             if (wanted && (catalog == null || !catalog.IsCurrent)) RebuildCatalog();
             ApplyMode(wanted);
             if (!wanted) return;
@@ -271,12 +338,14 @@ namespace CasualtiesUnknown.CraftingGrid
         }
         void PaintTiles()
         {
+            var selected = SelectedRecipe();
             foreach (var tile in tiles)
             {
                 var recipe = tile.Entry.Recipe;
                 tile.Visible = GridRules.MatchesSearch(tile.Known,tile.Known && !string.IsNullOrEmpty(searchFilter) ? recipe.simpleName : "",searchFilter);
                 tile.Visibility.alpha = tile.Visible ? 1 : 0; tile.Visibility.interactable = tile.Visible; tile.Visibility.blocksRaycasts = tile.Visible;
-                tile.Background.color = GridRules.HighlightCategory(tile.Known,tile.Entry.Layout.Category,categoryFilter) ? Tint(tile.Entry.Layout.Category) : Color.clear;
+                tile.Background.color = GridRules.HighlightCategory(tile.Known,tile.Entry.Layout.Category,categoryFilter) && categoryTints.TryGetValue(tile.Entry.Layout.Category,out var tint) ? tint : Color.clear;
+                tile.Selection.SetActive(tile.Known && recipe == selected);
                 tile.Unknown.gameObject.SetActive(!tile.Known); tile.Icon.gameObject.SetActive(tile.Known && tile.Entry.Sprite);
                 tile.Icon.sprite = tile.Ready ? tile.Entry.Sprite : tile.Entry.Gray;
                 var color = tile.Entry.Color;
@@ -328,19 +397,6 @@ namespace CasualtiesUnknown.CraftingGrid
             if (Input.GetKeyDown(KeyBinds.GetBind("craft")) || Input.GetKeyDown(KeyBinds.GetBind("pause")) || Input.GetKeyDown(KeyBinds.GetBind("woundview"))) return false;
             return UIUtil.GetEventSystemRaycastResults().Any(hit => hit.gameObject.TryGetComponent<TileEvents>(out var events) && events.Owner == this);
         }
-        static Color Tint(string category)
-        {
-            Color pigment;
-            switch (category)
-            {
-                case "Food": pigment = new Color32(238,196,140,255); break;
-                case "Medicine": pigment = new Color32(229,160,169,255); break;
-                case "Tools": pigment = new Color32(155,191,224,255); break;
-                case "Utilities": pigment = new Color32(194,161,209,255); break;
-                default: pigment = new Color32(139,197,162,255); break;
-            }
-            return Color.Lerp(Surface,pigment,.18f);
-        }
         void Craft(Tile tile)
         {
             if (gridMode != true || !tile.Visible || lastCraftFrame == Time.frameCount || !Camera.craftingPanel.activeSelf) return;
@@ -365,6 +421,7 @@ namespace CasualtiesUnknown.CraftingGrid
             if (!Camera || restored || gridMode != true || catalog == null || Time.unscaledTime < nextPoll) return;
             nextPoll = Time.unscaledTime+.4f;
             Guard(() => {
+                UpdateGridViewport();
                 if (!catalog.IsCurrent) { RebuildCatalog(); RefreshState(); }
                 else if (Math.Abs(width-viewport.rect.width) > 2) { RebuildLayout(); RefreshState(); }
                 else if (NativeCatalog.Fingerprint(Camera) != fingerprint) RefreshState();
@@ -377,7 +434,7 @@ namespace CasualtiesUnknown.CraftingGrid
         {
             if (restored) return;
             restored = true;
-            if (scroll && stockContent) { scroll.StopMovement(); scroll.content = stockContent; scroll.horizontal = stockHorizontal; scroll.normalizedPosition = stockScroll; }
+            if (scroll && stockContent) { scroll.StopMovement(); scroll.viewport = stockViewport; scroll.content = stockContent; scroll.horizontal = stockHorizontal; scroll.normalizedPosition = stockScroll; }
             if (stockGroup)
             {
                 stockGroup.alpha = stockAlpha; stockGroup.interactable = stockInteractable; stockGroup.blocksRaycasts = stockRaycasts;
@@ -388,7 +445,7 @@ namespace CasualtiesUnknown.CraftingGrid
             if (Camera && Camera.recipeFilterField) Camera.recipeFilterField.ForceLabelUpdate();
             if (clearMoved && clearRect) clearRect.anchoredPosition = clearPosition;
             if (boundary) { boundary.Exit = null; Destroy(boundary); }
-            foreach (var obj in new[] { content ? content.gameObject : null,gridToggle ? gridToggle.gameObject : null })
+            foreach (var obj in new[] { viewport ? viewport.gameObject : null,gridToggle ? gridToggle.gameObject : null })
                 if (obj) { obj.SetActive(false); Destroy(obj); }
             gameObject.SetActive(false);
         }

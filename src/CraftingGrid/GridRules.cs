@@ -4,6 +4,13 @@ namespace CasualtiesUnknown.CraftingGrid
 {
     public static class GridRules
     {
+        public static (float start, float end) ScrollbarInsets(float length, float barStart, float barEnd)
+        {
+            if (barEnd <= 0 || barStart >= length || barEnd <= barStart) return (0,0);
+            return barStart+barEnd >= length
+                ? (0,Math.Min(length,Math.Max(0,length-barStart+2)))
+                : (Math.Min(length,Math.Max(0,barEnd+2)),0);
+        }
         public static float CellSide(float viewportWidth, int columns)
         {
             if (columns < 1) throw new ArgumentOutOfRangeException(nameof(columns));
