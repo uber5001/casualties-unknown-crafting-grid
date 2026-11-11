@@ -37,6 +37,23 @@ namespace CasualtiesUnknown.CraftingGrid
     }
     public static class GridLayout
     {
+        public static BoardLayout CreateVertical(IEnumerable<LayoutEntry> entries)
+        {
+            // Transpose the same canonical catalog layout: levels now progress downward.
+            var original = Create(entries);
+            var board = new BoardLayout();
+            if (original.Strips.Count == 0) return board;
+            board.Bands.AddRange(original.Bands);
+            board.Columns = original.Strips[0].Height;
+            var strip = new Strip { Width = board.Columns, Height = original.Columns };
+            board.Strips.Add(strip);
+            foreach (var pair in original.Cells)
+            {
+                var cell = new Cell(0,pair.Value.Y,pair.Value.X);
+                board.Cells.Add(pair.Key,cell); strip.Occupied.Add(cell);
+            }
+            return board;
+        }
         static readonly string[] Categories = { "Food", "Materials", "Medicine", "Tools", "Utilities" };
         static string[] OrderedCategories(IEnumerable<LayoutEntry> entries) => entries.Select(e => e.Category).Distinct()
             .OrderBy(c => { int i = Array.IndexOf(Categories, c); return i < 0 ? int.MaxValue : i; })

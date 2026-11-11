@@ -8,13 +8,14 @@ using UnityEngine;
 
 namespace CasualtiesUnknown.CraftingGrid
 {
-    [BepInPlugin(Id, "Crafting Grid", "0.1.1")]
+    [BepInPlugin(Id, "Crafting Grid", "0.2.0")]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string Id = "uber5001.casualtiesunknown.craftinggrid";
         internal static Plugin Instance;
         internal static ManualLogSource Log;
         ConfigEntry<bool> active;
+        ConfigEntry<bool> useGrid;
         Harmony harmony;
         bool failed;
         bool refreshObserved;
@@ -23,10 +24,14 @@ namespace CasualtiesUnknown.CraftingGrid
         {
             Instance = this; Log = Logger;
             active = Config.Bind("General", "Enabled", true, "Replace the crafting presentation. False restores vanilla crafting.");
+            useGrid = Config.Bind("General", "UseGrid", true, "Use the icon grid in the native recipe scroll area. The in-menu Grid checkbox changes this preference.");
             active.SettingChanged += (_, __) => { if (!active.Value) RemoveView(); };
+            useGrid.SettingChanged += (_, __) => { if (view && view.Camera) view.Camera.RefreshRecipeList(); };
             InstallPatches();
-            Logger.LogInfo("Crafting Grid 0.1.1 ready; catalog is read from the live retail registry when crafting opens.");
+            Logger.LogInfo("Crafting Grid 0.2.0 ready; catalog is read from the live retail registry when crafting opens.");
         }
+        internal bool UseGrid => useGrid.Value;
+        internal void SetGridMode(bool value) { useGrid.Value = value; }
         void OnEnable() { if (Instance == this) { Logger.LogInfo("Crafting Grid enabled."); InstallPatches(); } }
         void OnDisable() { Logger.LogInfo("Crafting Grid disabled; removing its patches and presentation."); RemoveView(); harmony?.UnpatchSelf(); harmony = null; }
         void OnDestroy() { if (Instance == this) { Logger.LogInfo("Crafting Grid component destroyed."); RemoveView(); harmony?.UnpatchSelf(); Instance = null; } }

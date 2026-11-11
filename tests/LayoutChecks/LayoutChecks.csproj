@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
-  <ItemGroup><Compile Include="../../src/CraftingGrid/GridLayout.cs" Link="GridLayout.cs" /></ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../src/CraftingGrid/GridLayout.cs" Link="GridLayout.cs" />
+    <Compile Include="../../src/CraftingGrid/GridRules.cs" Link="GridRules.cs" />
+  </ItemGroup>
 </Project>

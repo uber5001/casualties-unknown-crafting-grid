@@ -47,4 +47,33 @@ var modded = GridLayout.Create(modified);
 Check(modded.Cells.ContainsKey(200) && modded.Cells.Count == 138,"New levels and categories must appear automatically");
 var manyCategories = Enumerable.Range(0,14).Select(i => new LayoutEntry { Key=i,Level=5,Category="Category"+i,SortName="Test",StableId=i.ToString() });
 Check(GridLayout.Create(manyCategories).Strips[0].Height == 14,"Height target must expand for more than ten categories");
-Console.WriteLine($"Passed {checks} layout/pocket checks; fixture 137 recipes, 135 outputs, 17×10, canonical bands, wrapping, overflow, and modded categories.");
+var vertical = GridLayout.CreateVertical(entries);
+Check(vertical.Columns == 10 && vertical.Strips.Single().Height == 17,"Inline grid must transpose to 10×17");
+Check(vertical.Cells.All(kv => kv.Value.X == board.Cells[kv.Key].Y && kv.Value.Y == board.Cells[kv.Key].X),"Transposition must preserve canonical recipe neighborhoods");
+Check(vertical.Cells.Values.Distinct().Count() == 137,"Transposed recipes must have unique reserved slots");
+var verticalPocket = new IngredientSpace(vertical,9);
+foreach (int count in new[] { 2,9,30 })
+{
+    var cells = verticalPocket.Place(count);
+    Check(cells.Count == count && cells.All(c => !vertical.Strips[c.Strip].Occupied.Contains(c)),"Inline ingredient groups must not overlap reserved recipes");
+}
+Check(GridLayout.CreateVertical(modified).Cells.Count == 138,"Transposed layout must include added recipes");
+Check(!GridRules.MatchesFilter(true,"Rope","Materials","Food",""),"Category filter must hide non-category recipes");
+Check(GridRules.Visible(true,false,true),"Known ingredient producers must override a category filter");
+Check(!GridRules.Visible(false,false,true),"Ingredient highlighting must not reveal unknown recipes");
+Check(GridRules.MatchesFilter(true,"Rope","Materials","Food","ro"),"Native search must override category and ignore case");
+Check(!GridRules.MatchesFilter(false,"Rope","Materials",null,"Rope"),"Search must not reveal an unknown identity");
+Check(GridRules.MatchesFilter(false,"","Materials",null,""),"Anonymous unknown slots remain in the all-category view");
+var delay = new HoverDelay<object>(.1f); var first = new object(); var second = new object();
+delay.Enter(first,0);
+Check(delay.TakeReady(.099f) == null,"Native details must not change before 100 ms");
+Check(ReferenceEquals(delay.TakeReady(.1f),first),"Native details should update after the hover delay");
+Check(delay.TakeReady(1) == null,"A stationary hover must not repeatedly refresh native details");
+delay.Enter(first,1); delay.Leave(first);
+Check(delay.TakeReady(2) == null,"Leaving a recipe must cancel pending native details");
+delay.Enter(first,3); delay.Enter(second,3.05f); delay.Leave(first);
+Check(delay.TakeReady(3.14f) == null,"A new recipe needs its own full delay");
+Check(ReferenceEquals(delay.TakeReady(3.16f),second),"A previous exit must not cancel the new recipe's delay");
+delay.Enter(first,4); delay.Clear();
+Check(delay.TakeReady(5) == null,"Closing or changing modes must cancel hover work");
+Console.WriteLine($"Passed {checks} checks: reference/modded geometry, transposed 10×17 layout, pockets, filter exceptions, and cancellable 100 ms hover.");
