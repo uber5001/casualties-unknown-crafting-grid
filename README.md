@@ -2,6 +2,8 @@
 
 A compact icon grid inside the game's original crafting menu. Keep the native search, filters, recipe details, tooltips, and crafting behavior, with a hand-picked layout that makes recipes easier to find.
 
+Downloads: [GitHub Releases](https://github.com/uber5001/casualties-unknown-crafting-grid/releases/latest) · [Nexus Mods](https://www.nexusmods.com/scavprototype/mods/895)
+
 ![Crafting Grid 0.4.0 showing the native recipe details, selected outline, ingredient badges, and used-in dots.](docs/images/crafting-grid-0.4.0.png)
 
 ## Install
