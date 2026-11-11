@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+.local/
+*.user
+*.suo
+*.log
+GamePaths.props
