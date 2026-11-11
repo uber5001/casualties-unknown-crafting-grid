@@ -16,7 +16,7 @@ Inspection performed November 10, 2026, against the installed retail game. This 
 | Locally available loader | BepInEx 5.4.23.5, in the separately installed demo |
 | Locally available analysis tools | Mono.Cecil in the demo loader; ICSharpCode.Decompiler 7.1.0.6543 in Visual Studio 2022; Windows SDK ILDasm |
 
-The retail installation currently has no BepInEx directory or Doorstop bootstrap. The demo loader log confirms that BepInEx 5.4.23.5 has run under Unity 2022.3 on Windows x64. Compatibility with the retail installation is **not yet exercised**. Do not copy the demo's plugins, patchers, configuration, multiplayer updater, or personal logs into the retail game or this repository.
+At initial inspection the retail installation had no BepInEx directory or Doorstop bootstrap. The demo loader log confirms that BepInEx 5.4.23.5 has run under Unity 2022.3 on Windows x64. Compatibility with the retail installation is **not yet exercised in a running game**. Do not copy the demo's plugins, patchers, configuration, multiplayer updater, or personal logs into the retail game or this repository.
 
 The official [BepInEx installation documentation](https://docs.bepinex.dev/articles/user_guide/installation/index.html) recommends a stable loader matched to executable architecture. The locally installed stable x64 Mono loader is a candidate; no download has been performed or authorized. Local build paths must remain configurable and untracked.
 
@@ -44,16 +44,27 @@ Static method-body inspection confirms these relationships:
 
 These observations do not yet establish all branches, side effects, level rules, registration readiness, secrecy semantics, or snapshot-count behavior. Read the complete relevant methods with the locally available decompiler before implementing the adapter. Keep analysis outputs local; do not commit game decompilations or assets.
 
-## Reference access and next work
+## Reference access and prototype scope
 
 The supplied ZIP contained only `PROMPT.md` and `crafting-reference.html`; both are preserved verbatim under `handoff/`.
 
 The handoff explicitly requires opening and interacting with the reference **before implementation**. The in-app browser timed out reaching a loopback HTTP server. Selecting the existing Firefox window through Computer Use returned `Computer Use was not approved to use Firefox`. No interaction with the reference has yet succeeded.
 
-The preferred next step is to permit Firefox access and open the local HTML file there. Do not replace the required interaction with source-only inspection or deploy the fixture to an external host as a workaround. Once access is available:
+The user subsequently waived hands-on reference interaction, requested a quick prototype for their own in-game test, and emphasized dynamic mod/update compatibility over fixed positions. Implementation proceeded from the HTML/CSS/JavaScript source. Optional repeated-craft counts were explicitly deferred for the prototype.
 
-1. Exercise the desktop grid, Flexiglass shortage, Foliage bag/Canvas highlighting, Casing counts, tooltip edges, keyboard focus, and narrow layout.
-2. Decompile and fully trace the retail crafting and matching methods; establish registry readiness and change notifications.
-3. Implement and test data-driven layout and ingredient-pocket geometry against the supplied fixture and synthetic modded registries.
-4. Build the BepInEx plugin using local game/loader references; preserve vanilla crafting on integration failures.
-5. Install the minimal compatible loader and plugin, then exercise the existing C binding and compare native crafting outcomes. Keep the fixture checks separate from real-game validation.
+The relevant retail classes were decompiled locally with the installed Visual Studio decompiler. Full method inspection confirmed the above allocation and craft path, `Recipe.visible` knowledge/level behavior, risk effects in `RecipeResult.SpawnResult`, the native liquid `resultCondition` volume, retained-tool wear, and the native `craftingcategory...` localization keys. No decompiled game source is distributed here.
+
+The initial patch is deliberately limited to a postfix on `PlayerCamera.RefreshRecipeList`. The stock refresh and other mods' hooks still run; stock controls remain operational under hidden, non-interactive CanvasGroups. The grid reads the full registry when the actual menu opens, after native initialization and normal recipe registration. Clicks locate the current index with `Recipes.recipes.IndexOf(recipe)`, set `selectedRecipe` directly without selection sounds, then call `TryCraft` once. Other mods' patches to that native craft action remain in the call path. No craft, spawn, RNG, or ingredient-use method is used by hover or eligibility display.
+
+The native visible rule permits risky recipes up to three INT above the player and always permits `specialKnown` recipes. The prototype uses that rule instead of the fixture's risk model. `RecipeItem.GetMatchingItem` accepts liquids only when one vessel meets the slot requirement and reserves destroyed non-liquid providers between slots; the display uses the game's thorough allocation for these decisions.
+
+## Validation and handoff
+
+- Release build succeeded against the installed retail assemblies and local BepInEx 5.4.23.5 with zero warnings and zero errors. No package feeds were used.
+- 131 executable geometry checks passed: fixture recipe/output counts, 17×10 desktop layout, exact reference band widths, canonical ordering independent of registry enumeration, whole-band wrapping, contiguous ingredient pockets, overflow, and new levels/categories.
+- `scripts/Install.ps1` installed the loader core/bootstrap from the existing local demo installation and the prototype DLL into the retail game. Only `BepInEx/core` and `BepInEx/plugins/CraftingGrid` were created under the retail BepInEx folder. No demo plugin, patcher, or updater was copied.
+- Installed DLL SHA-256 matched the build: `35B3B46CC3D9A3F635F75C778A56EE1EDDFEDB9E7772A3F3D64168D7D315FA58`.
+- `artifacts/CraftingGrid-0.1.0.zip` contains the plugin DLL and README, without game or loader binaries.
+- No real-game menu, rendering, craft, failure, inventory, or controller checks have been run. The user requested doing the in-game test themselves.
+
+Shortest check: start the retail game through Steam, load a run, press C, hover one known recipe, click it once, and check the inventory change. Then try a blocked tile and close/reopen. For a loading/UI failure, inspect `BepInEx/LogOutput.log` for `Crafting Grid` and `Crafting grid attached`; the attachment line records the actual live catalog size and game/Unity versions.

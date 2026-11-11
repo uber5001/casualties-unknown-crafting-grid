@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../GamePaths.props" Condition="Exists('../../GamePaths.props')" />
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <AssemblyName>CasualtiesUnknown.CraftingGrid</AssemblyName>
+    <Version>0.1.0</Version>
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Casualties Unknown</GamePath>
+    <ManagedPath>$(GamePath)\CasualtiesUnknown_Data\Managed</ManagedPath>
+  </PropertyGroup>
+  <Target Name="CheckLocalReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(ManagedPath)\Assembly-CSharp.dll')" Text="Set GamePath to the retail Casualties Unknown installation in GamePaths.props or /p:GamePath=..." />
+    <Error Condition="!Exists('$(BepInExPath)\core\BepInEx.dll')" Text="Set BepInExPath to a local BepInEx 5 installation. No packages will be downloaded." />
+  </Target>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BepInEx"><HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BepInExPath)\core\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(ManagedPath)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(ManagedPath)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(ManagedPath)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(ManagedPath)\UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.Physics2DModule"><HintPath>$(ManagedPath)\UnityEngine.Physics2DModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(ManagedPath)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(ManagedPath)\UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.TextMeshPro"><HintPath>$(ManagedPath)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="netstandard"><HintPath>$(ManagedPath)\netstandard.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>
